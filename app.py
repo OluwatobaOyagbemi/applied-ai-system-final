@@ -1,6 +1,12 @@
 import streamlit as st
+from dotenv import load_dotenv
 
+from pawpal_ai import PawPalAgent, apply_approved, default_planner, setup_logging
+from pawpal_ai.models import BLOCKED, NEEDS_REVIEW
 from pawpal_system import Owner, Pet, Scheduler, Task
+
+load_dotenv()
+setup_logging()
 
 st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
 
@@ -41,12 +47,13 @@ with st.form("add_pet", clear_on_submit=True):
         species = st.selectbox("Species", ["dog", "cat", "other"])
     with col3:
         age = st.number_input("Age", min_value=0, max_value=40, value=0)
+    notes = st.text_input("Notes for the AI (optional)", placeholder="e.g. arthritis, very energetic, indoor only")
     if st.form_submit_button("Add pet"):
         if not pet_name.strip():
             st.error("Enter a pet name.")
         else:
             try:
-                owner.add_pet(Pet(pet_name.strip(), species, age=int(age)))
+                owner.add_pet(Pet(pet_name.strip(), species, age=int(age), notes=notes.strip()))
                 st.success(f"Added {pet_name.strip()}.")
             except ValueError as err:
                 st.error(str(err))
@@ -59,6 +66,99 @@ if owner.pets:
     )
 else:
     st.info("No pets yet. Add one above.")
+
+st.divider()
+
+# --- AI Care Planner ----------------------------------------------------------
+# Retrieve guidelines -> Claude proposes cited tasks -> guardrails check them ->
+# dry-run schedule -> revise. Nothing is added until the owner approves it here.
+st.subheader("🤖 AI Care Planner")
+
+
+@st.cache_resource
+def get_agent() -> PawPalAgent:
+    return PawPalAgent(planner=default_planner())
+
+
+agent = get_agent()
+if agent.planner.source == "claude":
+    st.caption(f"Using Claude (`{agent.planner.model}`) with the PawPal+ knowledge base.")
+else:
+    st.caption("Offline mode: no `ANTHROPIC_API_KEY` found, so suggestions come straight from the "
+               "knowledge base. Add a key to `.env` to use Claude.")
+
+if not owner.pets:
+    st.caption("Add a pet first, then ask the AI to suggest a care plan.")
+else:
+    request = st.text_area(
+        "Anything the AI should know today? (optional)",
+        placeholder="e.g. Busy morning, Luna is getting older, Mochi's vet started a monthly heartworm preventive",
+        max_chars=2000,
+    )
+    if st.button("✨ Suggest a plan", type="primary"):
+        with st.status("Planning…", expanded=True) as status:
+            result = agent.run(owner, request)
+            for step in result.trace:
+                st.write(f"**{step.stage}** · {step.message}")
+            status.update(label="Stopped" if result.stopped else "Plan ready for your review",
+                          state="error" if result.stopped else "complete", expanded=False)
+        st.session_state.ai_result = result
+
+    result = st.session_state.get("ai_result")
+    if result is not None:
+        if result.stopped:
+            st.error(result.stop_reason)
+        elif not result.proposals:
+            st.info("The AI didn't find anything new to suggest.")
+        else:
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Confidence", f"{result.confidence:.0%}")
+            c2.metric("Planning rounds", result.rounds)
+            c3.metric("Grounded in sources", f"{result.grounded_rate:.0%}")
+            if result.planner_notes:
+                st.caption(f"Planner notes: {result.planner_notes}")
+
+            icon = {BLOCKED: "⛔ blocked", NEEDS_REVIEW: "⚠️ check with vet"}
+            rows = [
+                {
+                    "Add": p.verdict == "ok",
+                    "Pet": p.pet_name,
+                    "Task": p.description,
+                    "Min": p.duration_minutes,
+                    "Priority": p.priority,
+                    "Frequency": p.frequency,
+                    "Status": icon.get(p.verdict, "✅ ok"),
+                    "Why": p.rationale + (f" [{'; '.join(p.issues)}]" if p.issues else ""),
+                    "Sources": ", ".join(p.citations),
+                }
+                for p in result.proposals
+            ]
+            st.markdown("**Review the suggestions.** Tick the ones to add. Vet-sensitive tasks start "
+                        "unticked, and blocked tasks can't be added.")
+            edited = st.data_editor(
+                rows, hide_index=True, width="stretch", key="ai_review",
+                disabled=["Pet", "Task", "Min", "Priority", "Frequency", "Status", "Why", "Sources"],
+                column_config={"Add": st.column_config.CheckboxColumn(width="small")},
+            )
+            with st.expander(f"📚 {len(result.retrieved)} guideline excerpts the AI used"):
+                for c in result.retrieved:
+                    st.markdown(f"**`{c.id}`** · {c.doc.title} — {c.heading}")
+                    st.caption(f"{c.doc.source}\n\n{c.text[:400]}{'…' if len(c.text) > 400 else ''}")
+
+            col1, col2 = st.columns(2)
+            if col1.button("Add approved tasks", width="stretch"):
+                picked = [i for i, row in enumerate(edited) if row["Add"]]
+                blocked_picked = [i for i in picked if result.proposals[i].verdict == BLOCKED]
+                added = apply_approved(owner, result.proposals, picked)
+                st.session_state.flash = (
+                    f"Added {len(added)} AI-suggested task(s)."
+                    + (f" Skipped {len(blocked_picked)} blocked task(s)." if blocked_picked else "")
+                )
+                del st.session_state.ai_result
+                st.rerun()
+            if col2.button("Discard suggestions", width="stretch"):
+                del st.session_state.ai_result
+                st.rerun()
 
 st.divider()
 

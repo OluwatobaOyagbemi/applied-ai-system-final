@@ -1,0 +1,40 @@
+%% PawPal+ AI — system architecture
+%% Data flows top to bottom: input -> retrieval -> planning -> checks -> human review -> schedule.
+flowchart TD
+    U["👤 Owner<br/>pets, minutes, free-text request"] --> IG
+
+    subgraph AGENT["PawPalAgent (pawpal_ai/agent.py) — orchestration loop"]
+        IG{"Input guardrail<br/>empty / too long / emergency?"}
+        IG -- "emergency" --> STOP["⛔ Stop planning<br/>refer owner to a vet / poison control"]
+        IG -- "ok" --> R
+
+        R["🔎 Retriever (BM25)<br/>one query per pet + request"] --> P
+        KB[("📚 knowledge/*.md<br/>AVMA + Premier VetCare summaries<br/>YAML front matter")] --> R
+
+        P["🧠 Planner<br/>Claude (structured JSON output)<br/>or offline fallback"] --> G
+        G["🛡️ Task guardrails<br/>schema · grounding/citations · unsafe drugs & doses<br/>toxic foods · species · duplicates · duration"]
+        G --> S["🗓️ Dry-run Scheduler<br/>pawpal_system.Scheduler on a copy"]
+        S --> C{"Problems?<br/>blocked · skipped · over budget"}
+        C -- "yes, round < 3<br/>feedback" --> P
+        C -- "no / max rounds" --> OUT["Proposals + trace + confidence"]
+    end
+
+    OUT --> H["🙋 Human-in-the-loop review (Streamlit)<br/>✅ ok = pre-ticked · ⚠️ vet-sensitive = unticked · ⛔ blocked = can't add"]
+    H -- "approved only" --> APPLY["apply_approved()<br/>adds Tasks to real pets"]
+    APPLY --> SCHED["📅 Today's Schedule<br/>priority + time-budget planner from Module 2"]
+
+    AGENT -.-> LOG[("📝 logs/pawpal_ai.log")]
+
+    subgraph TESTING["Reliability testing"]
+        T1["pytest: 73 unit tests<br/>retriever, guardrails, agent loop, approval"]
+        T2["eval/run_eval.py<br/>10 scenarios + 13 red-team cases<br/>offline or --live, results.md / .json"]
+    end
+    T1 -.checks.-> AGENT
+    T2 -.scores.-> AGENT
+
+    classDef stop fill:#ffe0e0,stroke:#d33;
+    classDef human fill:#fff4d6,stroke:#e0a100;
+    classDef data fill:#e8f1ff,stroke:#4a7bd0;
+    class STOP stop;
+    class H human;
+    class KB,LOG data;
