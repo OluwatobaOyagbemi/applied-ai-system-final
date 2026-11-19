@@ -75,12 +75,16 @@ The full diagram source is [`diagrams/architecture.mmd`](diagrams/architecture.m
 
 ```mermaid
 flowchart TD
-    U["👤 Owner: pets, minutes, request"] --> IG{"Input guardrail"}
-    IG -- emergency --> STOP["⛔ Stop: contact a vet"]
-    IG -- ok --> R["🔎 Retriever (BM25)"]
-    KB[("📚 knowledge/*.md")] --> R
-    R --> P["🧠 Planner: Claude or offline"]
-    P --> G["🛡️ Task guardrails"]
+    U["👤 Owner: pets, minutes, request"] --> IG{"Input checks: rules + Claude Haiku"}
+    CI["📈 Daily check-ins"] --> HT{"Health trends"}
+    IG -- emergency / manipulation --> STOP["⛔ Stop: contact a vet"]
+    IG -- ok --> HT
+    HT -- urgent --> STOP
+    HT -- ok / call-vet note --> R["🔎 Retriever (BM25)"]
+    KB[("📚 16 vet sources")] --> R
+    R --> SC["⚖️ Source-conflict check"]
+    SC --> P["🧠 Planner: Claude or offline"]
+    P --> G["🛡️ Task rules + 🤖 AI reviewer"]
     G --> S["🗓️ Dry-run Scheduler"]
     S --> C{"Blocked / skipped?"}
     C -- "yes, feedback (≤3 rounds)" --> P
@@ -136,7 +140,7 @@ cp .env.example .env                 # then paste your key into .env
 | Command | What it does |
 |---|---|
 | `streamlit run app.py` | The app at http://localhost:8501. Add pets, then use **🤖 AI Care Planner**. |
-| `python -m pawpal_ai` | Terminal demo with sample pets (add `--offline` to skip Claude, `--approve` to print the final schedule). |
+| `python -m pawpal_ai` | Terminal demo with sample pets (add `--offline` to skip Claude, `--approve` to print the final schedule, `--sample-week` to add a week of health check-ins). |
 | `python -m pawpal_ai "your request"` | Same, with your own request. |
 | `python -m pytest` | The 137-test suite (no API calls). |
 | `python -m eval.run_eval` | Reliability evaluation, offline. Writes `eval/results.md`. |
@@ -156,59 +160,87 @@ The planner defaults to `claude-opus-5-5` and the emergency classifier to `claud
 
 ## 💬 Sample interactions
 
-These are real outputs from `python -m pawpal_ai --offline`. The sample owner has 90 minutes from 07:30, Mochi (dog, 2, "very energetic", who already has a 30-minute 08:00 walk) and Luna (cat, 11, "senior, a little stiff").
+These are real outputs of the current code, from `python -m pawpal_ai --offline --approve "<request>"`. The full, unedited runs are in [evidence/demo_runs.txt](evidence/demo_runs.txt), and every command below reproduces them. The sample owner has 90 minutes from 07:30, plus two pets: Mochi (dog, 2, "very energetic", who already has a 30-minute 08:00 walk) and Luna (cat, 11, "senior, a little stiff"). Offline mode is shown so anyone can reproduce it without an API key; the live Claude results are in the [testing summary](#-testing-summary).
 
 ### 1. A normal morning: plan, revise, fit the budget
 
-**Input:** `"Busy morning. Luna is getting older, keep her routine gentle."`
-
-```
-  [retrieve  ] Retrieved 10 guideline excerpts.
-  [plan      ] Round 1: offline planner proposed 11 task(s).
-  [guardrails] 11 ok, 0 need your review, 0 blocked.
-  [schedule  ] Dry run: 8 scheduled, 4 skipped, 0 conflict(s).
-  [revise    ] Asking the planner to fix 4 problem(s).
-  [plan      ] Round 2: offline planner proposed 7 task(s).
-  [schedule  ] Dry run: 8 scheduled, 0 skipped, 0 conflict(s).
+```text
+$ python -m pawpal_ai --offline --approve "Busy morning. Luna is getting older, keep her routine gentle."
+  [retrieve  ] Retrieved 13 guideline excerpts.
+  [conflicts ] 1 source conflict(s): Sources differ on vet exam: ...
+  [plan      ] Round 1: offline planner proposed 16 task(s).
+  [guardrails] 11 ok, 2 need your review, 3 blocked.
+  [schedule  ] Dry run: 9 scheduled, 5 skipped, 0 conflict(s).
+  [revise    ] Asking the planner to fix 8 problem(s).
+  [plan      ] Round 2: offline planner proposed 8 task(s).
+  [guardrails] 6 ok, 2 need your review, 0 blocked.
+  [schedule  ] Dry run: 9 scheduled, 0 skipped, 0 conflict(s).
   [done      ] Plan ready after 2 round(s). Confidence 0.85. Waiting for your approval.
 
-  ✅ ok   Mochi  Refresh water bowl                    5 min high   ← pvc-daily-routine#overview
-  ✅ ok   Luna   Clean litter box                     10 min high   ← pvc-daily-routine#overview
-  ✅ ok   Luna   Teeth care with pet dental product    5 min medium ← pvc-grooming-dental#grooming
+Proposals:
+  ✅ ok        Mochi  Refresh water bowl                       5 min high   ← pvc-daily-routine#overview
+  ✅ ok        Luna   Cat meal                                 5 min high   ← cornell-cat-feeding#by-life-stage
+  ✅ ok        Luna   Scoop litter box                         5 min high   ← aspca-cat-care#water-and-food
+  ✅ ok        Mochi  Play and check for signs of illness     15 min medium ← pvc-daily-routine#overview
   ...
-Daily plan for Jordan (85 of 90 min used):
+Daily plan for Jordan (80 of 90 min used):
   07:30 - Refresh water bowl for Mochi (5 min) - high priority, fits before 08:00
-  07:40 - Clean litter box for Luna (10 min) - high priority, fits before 08:00
+  07:40 - Cat meal for Luna (5 min) - high priority, fits before 08:00
   08:00 - Morning walk for Mochi (30 min) - high priority, at preferred time 08:00
   ...
 ```
 
-The first draft went over 90 minutes, so the agent revised it and dropped lower-priority tasks. It didn't add a second walk, because Mochi already has one. No walk was suggested for Luna and no litter box for Mochi. Every task cites the excerpt it came from.
+Round 1 went over 90 minutes and proposed duplicates. The agent revised, and round 2 fits with nothing blocked. It didn't add a second walk (Mochi already has one), there are no walks for Luna or litter tasks for Mochi, and every task cites its source.
 
 ### 2. An emergency: the system refuses to plan
 
-**Input:** `"Mochi ate chocolate an hour ago"`
-
-```
+```text
+$ python -m pawpal_ai --offline --approve "Mochi ate chocolate an hour ago"
   [stop      ] This sounds like it could be an emergency. WhiskerWise is a daily planner, not medical
                help. Contact your veterinarian or an emergency animal clinic now. In the US, the
                ASPCA Animal Poison Control line is (888) 426-4435.
 ```
 
-No retrieval runs and the model is never called, because the input guardrail stops the request first.
+No retrieval runs and the model is never called. With an API key, a Claude Haiku check also catches emergencies with no keyword ("won't get up and hasn't eaten since yesterday").
 
 ### 3. Medication: reminders only, and the owner must confirm
 
-**Input:** `"The vet put Mochi on a monthly heartworm preventive, today is the day"`
-
-```
-  ✅ ok        Mochi  Refresh water bowl                       5 min high
-  ⚠️  review  Mochi  Give vet-prescribed heartworm preventive   5 min high   ← pvc-parasites#...
+```text
+$ python -m pawpal_ai --offline --approve "The vet put Mochi on a monthly heartworm preventive, today is the day"
+  ✅ ok        Mochi  Refresh water bowl                       5 min high   ← pvc-daily-routine#overview
+  ⚠️  review  Mochi  Give vet-prescribed flea/tick preventive   5 min high   ← pvc-parasites#heartworm
               ↳ vet-sensitive: confirm product and schedule with your veterinarian
-  ✅ ok        Luna   Clean litter box                        10 min high
 ```
 
-Medication tasks never name a product or dose, and they start **unticked** in the review table. If a planner suggests "Give 2 aspirin tablets", the guardrails block it outright (see the red-team results below).
+Medication tasks never name a product or dose and start **unticked**. "Give 2 aspirin tablets" would be blocked outright (see the red teams below).
+
+### 4. The sources disagree: show both, don't pick one
+
+```text
+$ python -m pawpal_ai --offline --approve "Luna is getting older, when should she see the vet?"
+⚖️  Sources differ on vet exam: Senior dog and cat care says every six months (for senior pets);
+    Cat care basics (litter, water, grooming, vet visits) says at least once a year.
+    WhiskerWise won't pick a side; ask your vet.
+
+  ⚠️  review  Luna   Book senior wellness exam               10 min medium ← aaha-senior-care#who-counts-as-senior
+              ↳ Sources differ on vet exam: ... Ask your vet which applies.
+```
+
+### 5. Health memory: a trend across days changes the plan
+
+```text
+$ python -m pawpal_ai --offline --approve --sample-week "Normal day, nothing special"
+Check-ins (Luna's appetite, last 7 days): Thu=normal Fri=normal Sat=normal Sun=normal Mon=less Tue=less Wed=less
+
+  [health    ] 1 health trend(s) from the daily check-ins: Luna has eaten less than usual 3 days in a row. ...
+📞 Health alert (call_vet): Luna has eaten less than usual 3 days in a row. That's worth a call to your vet.
+
+  ✅ ok        Luna   Call the vet about check-ins             5 min high   ← aspca-cat-care#enrichment
+Daily plan for Jordan (80 of 90 min used):
+  07:50 - Call the vet about check-ins for Luna (5 min) - high priority, fits before 08:00
+```
+
+The request was ordinary ("Normal day"), but the week of check-ins made the planner add a high-priority vet call.
 
 ---
 
@@ -220,12 +252,12 @@ Every output below is in a committed text log, so the system can be checked with
 python -m pytest -v                 > evidence/pytest_output.txt
 python -m eval.run_eval --live --repeat 2 > evidence/eval_output_live.txt   # also writes eval/results.md
 python -m eval.record_evidence --live   # writes ai_interactions.md + evidence/rag_before_after.txt
-python -m pawpal_ai --offline --approve "<request>"                 # see evidence/demo_runs.txt
+python -m pawpal_ai --offline --approve [--sample-week] "<request>"  # see evidence/demo_runs.txt
 ```
 
 | Evidence | What it shows | File |
 |---|---|---|
-| End-to-end runs (3 inputs) | A normal plan with revision, an emergency stop, and a medication review, each with the final schedule | [evidence/demo_runs.txt](evidence/demo_runs.txt) |
+| End-to-end runs (5 inputs) | A normal plan with revision, an emergency stop, a medication review, a source conflict, and a health trend, each with the final schedule | [evidence/demo_runs.txt](evidence/demo_runs.txt) |
 | Agent reasoning traces (live Claude) | Retrieved chunk ids, each planning round, guardrail verdicts, the exact feedback sent back to the planner, and the final proposals | [ai_interactions.md](ai_interactions.md) |
 | RAG before/after | The same request with one source vs. the full knowledge base | [evidence/rag_before_after.txt](evidence/rag_before_after.txt) |
 | Evaluation + guardrail red teams (live Claude) | 19 scenarios run twice; task, input and output red teams | [eval/results.md](eval/results.md), [evidence/eval_output_live.txt](evidence/eval_output_live.txt) |

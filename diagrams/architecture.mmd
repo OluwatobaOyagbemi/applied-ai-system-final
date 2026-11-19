@@ -1,40 +1,55 @@
-%% PawPal+ AI — system architecture
-%% Data flows top to bottom: input -> retrieval -> planning -> checks -> human review -> schedule.
+%% WhiskerWise (formerly PawPal+ AI): system architecture
+%% Data flows top to bottom: input -> safety checks -> retrieval -> planning -> checks -> human review -> schedule.
 flowchart TD
     U["👤 Owner<br/>pets, minutes, free-text request"] --> IG
+    CI["📈 Daily check-ins<br/>appetite · energy · bathroom · vomiting<br/>(pawpal_ai/health.py)"] --> HT
 
-    subgraph AGENT["PawPalAgent (pawpal_ai/agent.py) — orchestration loop"]
-        IG{"Input guardrail<br/>empty / too long / emergency?"}
-        IG -- "emergency" --> STOP["⛔ Stop planning<br/>refer owner to a vet / poison control"]
-        IG -- "ok" --> R
+    subgraph AGENT["PawPalAgent (pawpal_ai/agent.py): orchestration loop"]
+        IG{"Input guardrail (rules)<br/>empty / too long / emergency regex<br/>prompt injection · contact info redacted"}
+        IG -- "emergency or injection" --> STOP["⛔ Stop planning<br/>refer owner to a vet / poison control"]
+        IG -- "ok" --> AIC{"🤖 AI input check (Claude Haiku)<br/>emergency in any wording?<br/>manipulation attempt?"}
+        AIC -- "emergency / manipulation" --> STOP
+        AIC -- "ok / unsure (caution)" --> HT{"Health trends<br/>urgent? call vet?"}
+        HT -- "urgent" --> STOP
+        HT -- "ok / call-vet note" --> R
 
-        R["🔎 Retriever (BM25)<br/>one query per pet + request"] --> P
-        KB[("📚 knowledge/*.md<br/>AVMA + Premier VetCare summaries<br/>YAML front matter")] --> R
+        R["🔎 Retriever (BM25)<br/>per pet: species + life stage + request"] --> SC
+        KB[("📚 knowledge/*.md<br/>16 vet sources: AVMA, AKC, ASPCA,<br/>Merck, Cornell, VCA, AAHA, clinic brochure")] --> R
+        KB -. "library cross-check" .-> SC
+        SC["⚖️ Source-conflict detection<br/>(pawpal_ai/conflicts.py)<br/>sources disagree? show both"] --> P
 
-        P["🧠 Planner<br/>Claude (structured JSON output)<br/>or offline fallback"] --> G
-        G["🛡️ Task guardrails<br/>schema · grounding/citations · unsafe drugs & doses<br/>toxic foods · species · duplicates · duration"]
-        G --> S["🗓️ Dry-run Scheduler<br/>pawpal_system.Scheduler on a copy"]
+        P["🧠 Planner<br/>Claude Opus (structured JSON, cited)<br/>or offline fallback"] --> G
+        G["🛡️ Task guardrails (rules)<br/>citations · drugs & doses · toxic foods<br/>unsafe products/activities · species · duplicates"]
+        G --> AR["🤖 AI task reviewer (Claude Haiku)<br/>second opinion on every task"]
+        AR --> S["🗓️ Dry-run Scheduler<br/>pawpal_system.Scheduler on a copy"]
         S --> C{"Problems?<br/>blocked · skipped · over budget"}
         C -- "yes, round < 3<br/>feedback" --> P
-        C -- "no / max rounds" --> OUT["Proposals + trace + confidence"]
+        C -- "no / max rounds" --> OUT["Proposals + trace + confidence<br/>+ conflicts + health caution"]
     end
 
-    OUT --> H["🙋 Human-in-the-loop review (Streamlit)<br/>✅ ok = pre-ticked · ⚠️ vet-sensitive = unticked · ⛔ blocked = can't add"]
-    H -- "approved only" --> APPLY["apply_approved()<br/>adds Tasks to real pets"]
+    OUT --> H["🙋 Human-in-the-loop review (Streamlit)<br/>✅ ok = pre-ticked · ⚠️ vet-sensitive or disputed = unticked · ⛔ blocked = can't add"]
+    H -- "approved only" --> APPLY["apply_approved()<br/>re-checks, then adds Tasks to real pets"]
     APPLY --> SCHED["📅 Today's Schedule<br/>priority + time-budget planner from Module 2"]
+    CI --> VS["📄 One-page vet summary"]
 
     AGENT -.-> LOG[("📝 logs/pawpal_ai.log")]
 
     subgraph TESTING["Reliability testing"]
-        T1["pytest: 73 unit tests<br/>retriever, guardrails, agent loop, approval"]
-        T2["eval/run_eval.py<br/>10 scenarios + 13 red-team cases<br/>offline or --live, results.md / .json"]
+        T1["pytest: 137 unit tests"]
+        T2["eval/run_eval.py<br/>20 scenarios + task/input/output red teams<br/>offline or --live, results.md / .json"]
+        T3["eval/redteam_ai.py<br/>attacker Claude writes new attacks<br/>rules 9/50 vs rules + AI 49/50"]
     end
     T1 -.checks.-> AGENT
     T2 -.scores.-> AGENT
+    T3 -.attacks.-> AGENT
 
     classDef stop fill:#ffe0e0,stroke:#d33;
     classDef human fill:#fff4d6,stroke:#e0a100;
     classDef data fill:#e8f1ff,stroke:#4a7bd0;
+    classDef ai fill:#f1e6ff,stroke:#8a3be6;
+    classDef novel fill:#e6fbf3,stroke:#12b886;
     class STOP stop;
     class H human;
     class KB,LOG data;
+    class AIC,AR,P ai;
+    class SC,CI,HT,VS novel;

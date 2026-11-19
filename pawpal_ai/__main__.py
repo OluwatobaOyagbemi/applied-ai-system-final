@@ -30,6 +30,8 @@ def main() -> None:
     parser.add_argument("request", nargs="?", default="Busy morning. Luna is getting older, keep her routine gentle.")
     parser.add_argument("--offline", action="store_true", help="use the offline planner even if an API key is set")
     parser.add_argument("--approve", action="store_true", help="auto-approve tasks marked ok and print the final schedule")
+    parser.add_argument("--sample-week", action="store_true",
+                        help="add a week of daily check-ins where Luna's appetite drops (health memory demo)")
     args = parser.parse_args()
 
     load_dotenv()
@@ -40,12 +42,22 @@ def main() -> None:
     print(f"Request: {args.request!r}")
     print(f"Pets: {', '.join(f'{p.name} ({p.species}, {p.age})' for p in owner.pets)} · "
           f"{owner.available_minutes} min from {owner.day_start}\n")
-    result = agent.run(owner, args.request)
+    health_log = None
+    if args.sample_week:
+        from .health import HealthLog, sample_week
+        health_log = HealthLog(sample_week("Luna"))
+        print("Check-ins (Luna's appetite, last 7 days): "
+              + " ".join(f"{c.day:%a}={c.appetite}" for c in health_log.entries) + "\n")
+    result = agent.run(owner, args.request, health_log=health_log)
     for step in result.trace:
         print(f"  [{step.stage:10}] {step.message}")
+    for alert in result.health_alerts:
+        print(f"\n{alert.icon} Health alert ({alert.level}): {alert.message}")
     if result.stopped:
         print(f"\n⛔ {result.stop_reason}")
         return
+    for conflict in result.source_conflicts:
+        print(f"\n⚖️  {conflict.summary()} WhiskerWise won't pick a side; ask your vet.")
 
     if result.caution:
         print(f"\n⚠️  {result.caution}")

@@ -131,6 +131,13 @@ class OfflinePlanner:
                     if any(t.category == s.get("category") and _key_words(t.description) & _key_words(s["description"])
                            for t in pet.tasks if not t.completed):
                         continue   # pet already has something like this
+                    # Life-stage tasks only for pets at that stage (no "senior exam" for a 2-year-old).
+                    text = f"{chunk.doc.id} {s['description']}".lower()
+                    senior_age = 7 if species == "dog" else 10
+                    if "senior" in text and pet.age < senior_age:
+                        continue
+                    if any(w in text for w in ("puppy", "kitten")) and pet.age >= 1:
+                        continue
                     proposals.append(ProposedTask(
                         pet_name=pet.name,
                         description=s["description"],
@@ -157,7 +164,12 @@ class OfflinePlanner:
         # Highest priority first, then shortest, so trimming drops nice-to-haves.
         proposals.sort(key=lambda t: (-PRIORITY_RANK.get(t.priority, 0), t.duration_minutes))
         notes = "Offline planner: tasks come straight from the knowledge base's suggested tasks."
-        if feedback and any("budget" in f or "skipped" in f for f in feedback):
+        if feedback:
+            # Drop tasks the guardrails blocked last round, then always respect the budget.
+            blocked = {re.match(r"'(.+?)' for (.+?) was blocked", f).groups() for f in feedback
+                       if re.match(r"'(.+?)' for (.+?) was blocked", f)}
+            proposals = [t for t in proposals if (t.description, t.pet_name) not in blocked]
+        if feedback:
             budget, kept, used = owner.available_minutes, [], sum(
                 t.duration_minutes for p in owner.pets for t in p.tasks if t.is_due_today()
             )

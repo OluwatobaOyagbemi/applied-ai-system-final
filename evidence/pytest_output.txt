@@ -136,4 +136,4 @@ tests/test_pawpal.py::test_owner_with_no_pets_gets_empty_plan PASSED
 tests/test_pawpal.py::test_pet_with_no_tasks_is_handled PASSED
 tests/test_pawpal.py::test_zero_available_minutes_skips_everything PASSED
 tests/test_pawpal.py::test_remove_task_and_remove_pet PASSED
-============================= 137 passed in 0.26s ==============================
+============================= 137 passed in 0.24s ==============================
