@@ -35,6 +35,7 @@ from . import guardrails
 from .models import BLOCKED, NEEDS_REVIEW, OK, PlannerOutput, ProposedTask, TraceStep
 from .planner import OfflinePlanner, Planner, default_planner
 from .conflicts import Conflict, find_conflicts, matching_conflict
+from .health import Alert, HealthLog, analyze
 from .retriever import Chunk, Retriever
 from .safety_check import default_emergency_check
 
@@ -69,6 +70,7 @@ class AgentResult:
     planner_confidence: float = 0.0
     caution: str = ""                     # shown to the owner when the AI safety check was unsure or failed
     source_conflicts: list[Conflict] = field(default_factory=list)   # retrieved sources that disagree
+    health_alerts: list[Alert] = field(default_factory=list)         # trends from the daily check-ins
 
     @property
     def counts(self) -> dict[str, int]:
@@ -163,11 +165,11 @@ class PawPalAgent:
 
     # --- main loop -------------------------------------------------------------
 
-    def run(self, owner: Owner, request: str = "") -> AgentResult:
+    def run(self, owner: Owner, request: str = "", health_log: HealthLog | None = None) -> AgentResult:
         """Plan for `owner`. CODE guardrail: the owner's data is fingerprinted
         before and after, and a run that changed it is refused."""
         before = fingerprint(owner)
-        result = self._run(owner, request or "")
+        result = self._run(owner, request or "", health_log)
         if fingerprint(owner) != before:
             log.error("Agent run modified the owner's data; result discarded")
             return AgentResult(request=request, stopped=True,
@@ -175,7 +177,7 @@ class PawPalAgent:
                                trace=result.trace + [TraceStep("stop", "Owner data changed during planning; result discarded.")])
         return result
 
-    def _run(self, owner: Owner, request: str) -> AgentResult:
+    def _run(self, owner: Owner, request: str, health_log: HealthLog | None = None) -> AgentResult:
         result = AgentResult(request=request)
         log.info("Agent run started: %d pet(s), %d min, request=%r", len(owner.pets), owner.available_minutes, request)
 
@@ -213,6 +215,25 @@ class PawPalAgent:
             result.trace.append(TraceStep("stop", profile.reason))
             log.warning("Agent stopped at profile guardrail: %s", profile.reason)
             return result
+        # Novel step: health memory across days. Trends in the daily check-ins
+        # can stop planning (urgent) or add a vet reminder (call_vet).
+        health_notes: list[str] = []
+        if health_log is not None:
+            result.health_alerts = analyze(health_log, owner.pets)
+            urgent = [a for a in result.health_alerts if a.level == "urgent"]
+            if urgent:
+                result.stopped = True
+                result.stop_reason = " ".join(a.message for a in urgent) + " WhiskerWise is a daily planner, not medical help."
+                result.trace.append(TraceStep("stop", result.stop_reason, {"health": True}))
+                log.warning("Agent stopped by health trend: %s", result.stop_reason)
+                return result
+            vet = [a for a in result.health_alerts if a.level == "call_vet"]
+            if vet:
+                result.caution = " ".join(a.message for a in vet)
+                health_notes = [f"Health check-ins: {a.message} Include a short high-priority task to call the vet "
+                                f"about it for {a.pet_name}, and keep that pet's other tasks gentle." for a in vet]
+                result.trace.append(TraceStep("health", f"{len(vet)} health trend(s) from the daily check-ins: "
+                                              + " ".join(a.message for a in vet)))
         if not owner.pets:
             result.stopped, result.stop_reason = True, "Add at least one pet before asking the AI to plan."
             result.trace.append(TraceStep("stop", result.stop_reason))
@@ -231,8 +252,8 @@ class PawPalAgent:
         # Novel step: notice when the retrieved sources disagree, instead of
         # letting the planner silently pick one.
         result.source_conflicts = find_conflicts(chunks, library=self.retriever.chunks)
-        notes = [c.summary() + " Mention both views and tell the owner to confirm with their vet."
-                 for c in result.source_conflicts]
+        notes = health_notes + [c.summary() + " Mention both views and tell the owner to confirm with their vet."
+                                for c in result.source_conflicts]
         if result.source_conflicts:
             result.trace.append(TraceStep("conflicts", f"{len(result.source_conflicts)} source conflict(s): "
                                           + " ".join(c.summary() for c in result.source_conflicts)))

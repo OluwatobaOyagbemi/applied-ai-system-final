@@ -424,3 +424,88 @@ def test_no_conflict_for_routine_adult_dog():
     owner = Owner("Jordan", available_minutes=60)
     owner.add_pet(Pet("Mochi", "dog", age=3))
     assert PawPalAgent(planner=OfflinePlanner(), retriever=RETRIEVER).run(owner, "busy day").source_conflicts == []
+
+
+# --- Health memory across days ---------------------------------------------------------
+
+from datetime import date as _date, timedelta as _td  # noqa: E402
+
+from pawpal_ai.health import CheckIn, HealthLog, analyze, sample_week, vet_summary  # noqa: E402
+
+DAY = _date(2026, 11, 18)
+
+
+def _log(pet, rows):
+    log = HealthLog()
+    for i, kw in enumerate(rows):
+        log.add(CheckIn(pet, DAY - _td(days=len(rows) - 1 - i), **kw))
+    return log
+
+
+def _levels(alerts):
+    return [(a.pet_name, a.level) for a in alerts]
+
+
+def test_eating_less_three_days_calls_vet():
+    owner = make_owner()
+    log = _log("Luna", [{}, {"appetite": "less"}, {"appetite": "less"}, {"appetite": "less"}])
+    assert ("Luna", "call_vet") in _levels(analyze(log, owner.pets, today=DAY))
+
+
+def test_one_day_eating_less_is_only_watch():
+    owner = make_owner()
+    log = _log("Luna", [{}, {}, {"appetite": "less"}])
+    assert _levels(analyze(log, owner.pets, today=DAY)) == [("Luna", "watch")]
+
+
+def test_cat_not_eating_two_days_is_urgent_but_dog_is_call_vet():
+    owner = make_owner()
+    cat = _log("Luna", [{"appetite": "none"}, {"appetite": "none"}])
+    dog = _log("Mochi", [{"appetite": "none"}, {"appetite": "none"}])
+    assert ("Luna", "urgent") in _levels(analyze(cat, owner.pets, today=DAY))
+    assert ("Mochi", "call_vet") in _levels(analyze(dog, owner.pets, today=DAY))
+
+
+def test_cat_straining_is_urgent():
+    owner = make_owner()
+    log = _log("Luna", [{"bathroom": "straining"}])
+    assert analyze(log, owner.pets, today=DAY)[0].level == "urgent"
+
+
+def test_vomiting_two_of_three_days_calls_vet():
+    owner = make_owner()
+    log = _log("Mochi", [{"vomited": True}, {}, {"vomited": True}])
+    assert ("Mochi", "call_vet") in _levels(analyze(log, owner.pets, today=DAY))
+
+
+def test_old_check_ins_do_not_alert():
+    owner = make_owner()
+    log = HealthLog([CheckIn("Luna", DAY - _td(days=10), appetite="none")])
+    assert analyze(log, owner.pets, today=DAY) == []
+
+
+def test_health_log_round_trips_json_and_rejects_bad_values():
+    log = _log("Luna", [{"appetite": "less", "notes": "left half"}])
+    assert HealthLog.from_json(log.to_json()).entries == log.entries
+    with pytest.raises(ValueError):
+        CheckIn("Luna", DAY, appetite="ravenous")
+
+
+def test_agent_stops_on_urgent_trend_and_adds_vet_task_on_call_vet():
+    owner = make_owner()
+    urgent = _log("Luna", [{"bathroom": "straining"}])
+    urgent.entries[-1].day = _date.today()
+    r = PawPalAgent(planner=OfflinePlanner(), retriever=RETRIEVER).run(owner, "", health_log=urgent)
+    assert r.stopped and "urinary" in r.stop_reason
+    week = HealthLog(sample_week("Luna"))
+    r = PawPalAgent(planner=OfflinePlanner(), retriever=RETRIEVER).run(make_owner(), "", health_log=week)
+    assert not r.stopped and r.caution
+    assert any(p.description == "Call the vet about check-ins" and p.pet_name == "Luna" and p.verdict == OK
+               for p in r.proposals)
+
+
+def test_vet_summary_lists_flags_and_check_ins():
+    owner = make_owner()
+    log = HealthLog(sample_week("Luna", today=DAY))
+    md = vet_summary(log, owner.get_pet("Luna"), analyze(log, owner.pets, today=DAY), [], today=DAY)
+    assert "# Health summary: Luna" in md and "eaten less than usual 3 days in a row" in md and md.count("| less |") == 3

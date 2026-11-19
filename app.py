@@ -5,6 +5,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from pawpal_ai import OfflinePlanner, PawPalAgent, apply_approved, default_planner, setup_logging
+from pawpal_ai.health import APPETITE, BATHROOM, ENERGY, CheckIn, HealthLog, analyze, sample_week, vet_summary
 from pawpal_ai.models import BLOCKED, NEEDS_REVIEW
 from pawpal_system import Owner, Pet, Scheduler, Task
 import ui_theme as ui
@@ -113,7 +114,72 @@ else:
 # --- AI Care Planner ----------------------------------------------------------
 # Retrieve guidelines -> Claude proposes cited tasks -> guardrails check them ->
 # dry-run schedule -> revise. Nothing is added until the owner approves it here.
-ui.section(3, "Ask the AI", "Retrieves vet guidance, drafts cited tasks, checks them, and waits for your approval.")
+# --- Daily check-in (health memory across days) ------------------------------
+ui.section(3, "Daily check-in", "A 20-second check per pet. WhiskerWise watches the trend across days and tells you when it's worth calling the vet.")
+health: HealthLog = st.session_state.setdefault("health", HealthLog())
+if not owner.pets:
+    st.caption("Add a pet first, then log how they're doing each day.")
+else:
+    names = [p.name for p in owner.pets]
+    with st.form("checkin", clear_on_submit=True):
+        c1, c2 = st.columns(2)
+        with c1:
+            ci_pet = st.selectbox("Pet", names, key="ci_pet")
+            appetite = st.radio("Appetite", APPETITE, horizontal=True)
+            energy = st.radio("Energy", ENERGY, horizontal=True)
+        with c2:
+            ci_day = st.date_input("Day", value=date.today(), max_value=date.today())
+            bathroom = st.selectbox("Bathroom / litter", BATHROOM)
+            vomited = st.checkbox("Vomited")
+        ci_notes = st.text_input("Anything else? (optional)", placeholder="e.g. left half her breakfast", max_chars=300)
+        if st.form_submit_button("Save check-in", type="primary"):
+            health.add(CheckIn(ci_pet, ci_day, appetite, energy, bathroom, vomited, ci_notes))
+            st.session_state.flash_health = f"Saved {ci_pet}'s check-in for {ci_day:%a %b %d}."
+            st.rerun()
+    if "flash_health" in st.session_state:
+        st.success(st.session_state.pop("flash_health"))
+
+    alerts = analyze(health, owner.pets)
+    for a in alerts:
+        text = f"{a.icon} **{a.pet_name}:** {a.message}  \nBased on: `{a.source}`"
+        (st.error if a.level == "urgent" else st.warning if a.level == "call_vet" else st.info)(text)
+
+    if health.entries:
+        st.dataframe(
+            [{"Day": f"{e.day:%a %b %d}", "Pet": e.pet_name, "Appetite": e.appetite, "Energy": e.energy,
+              "Bathroom": e.bathroom, "Vomited": "yes" if e.vomited else "", "Notes": e.notes}
+             for e in sorted(health.entries, key=lambda e: (e.day, e.pet_name), reverse=True)
+             if (date.today() - e.day).days < 7],
+            hide_index=True, width="stretch",
+        )
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        if st.button("🧪 Load a sample week", width="stretch",
+                     help="Seven days of check-ins where the first pet's appetite drops off at the end"):
+            for row in sample_week(names[0]):
+                health.add(row)
+            st.rerun()
+    with c2:
+        summary_pet = owner.get_pet(names[0]) if len(names) == 1 else None
+        pick = summary_pet or owner.get_pet(st.session_state.get("ci_pet", names[0]))
+        st.download_button("📄 Vet summary", vet_summary(health, pick, alerts, owner.get_all_tasks()),
+                           file_name=f"{pick.name.lower()}_health_summary.md", width="stretch",
+                           help=f"One-page summary of {pick.name}'s last 14 days, to bring to the vet")
+    with c3:
+        st.download_button("💾 Save history", health.to_json(), file_name="whiskerwise_checkins.json",
+                           width="stretch", help="Download your check-ins; upload them next time to keep the history")
+    uploaded = st.file_uploader("Restore saved check-ins", type=["json"], label_visibility="collapsed")
+    if uploaded is not None and st.session_state.get("restored") != uploaded.name:
+        try:
+            for row in HealthLog.from_json(uploaded.read().decode("utf-8")).entries:
+                if row.pet_name in names:
+                    health.add(row)
+            st.session_state.restored = uploaded.name
+            st.rerun()
+        except (ValueError, KeyError, TypeError) as err:
+            st.error(f"Couldn't read that file: {err}")
+
+ui.section(4, "Ask the AI", "Retrieves vet guidance, drafts cited tasks, checks them, and waits for your approval.")
 
 
 @st.cache_resource
@@ -168,7 +234,7 @@ else:
     )
     if st.button("✨ Suggest a plan", type="primary"):
         with st.status("Planning…", expanded=True) as status:
-            result = agent.run(owner, request)
+            result = agent.run(owner, request, health_log=st.session_state.get("health"))
             if using_claude:   # every Claude-backed run counts, including emergency stops
                 usage["count"] += 1
                 st.session_state.ai_used = session_used + 1
@@ -236,7 +302,7 @@ else:
                 added = apply_approved(owner, result.proposals, picked)
                 st.session_state.setdefault("ai_task_ids", set()).update(id(t) for t in added)
                 st.session_state.flash = (
-                    f"Added {len(added)} AI-suggested task(s). They're in step 4 below, marked 🤖 AI."
+                    f"Added {len(added)} AI-suggested task(s). They're in step 5 below, marked 🤖 AI."
                     + (f" Skipped {len(blocked_picked)} blocked task(s)." if blocked_picked else "")
                 )
                 del st.session_state.ai_result
@@ -247,7 +313,7 @@ else:
 
 
 # --- Tasks ------------------------------------------------------------------
-ui.section(4, "Tasks", "Everything on your list: approved AI suggestions and tasks you add yourself.")
+ui.section(5, "Tasks", "Everything on your list: approved AI suggestions and tasks you add yourself.")
 if not owner.pets:
     st.caption("Add a pet before adding tasks.")
 else:
@@ -292,7 +358,7 @@ else:
     elif owner.get_all_tasks():
         st.info("No tasks match these filters.")
     else:
-        st.info("No tasks yet. Ask the AI in step 3 and click **Add approved tasks**, or add your own below.")
+        st.info("No tasks yet. Ask the AI in step 4 and click **Add approved tasks**, or add your own below.")
 
     # --- Mark complete (recurring tasks get their next copy automatically) ---
     due_now = scheduler.sort_by_time(scheduler.collect_tasks())
@@ -371,7 +437,7 @@ else:
 
 
 # --- Schedule ---------------------------------------------------------------
-ui.section(5, "Today's schedule", "Fits the highest-priority tasks into your minutes, with a reason for each.")
+ui.section(6, "Today's schedule", "Fits the highest-priority tasks into your minutes, with a reason for each.")
 if st.button("Generate schedule", type="primary"):
     scheduler = Scheduler(owner)
     plan = scheduler.generate_plan()

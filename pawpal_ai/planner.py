@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from typing import Protocol
 
 from pawpal_system import PRIORITY_RANK, Owner
@@ -71,7 +72,8 @@ Rules:
 - Keep descriptions short (under 8 words) and the rationale to one sentence that says what the source recommends.
 - Set `confidence` lower when the sources are thin for this pet (for example an unusual species) and say so in `notes`.
 - If revision feedback is included, fix every listed problem.
-- If source conflicts are listed, don't pick a side: say in the rationale that the sources differ and that the owner should confirm with their vet."""
+- Follow the notes: if sources differ, don't pick a side (say so in the rationale and suggest confirming with the vet); if a health trend is noted, add the requested reminder to call the vet and keep that pet's plan gentle.
+- A "call the vet" reminder may cite any excerpt about vet visits or warning signs."""
 
 
 # Specialization: few-shot examples plus a constrained house style. Compared
@@ -111,7 +113,8 @@ class OfflinePlanner:
 
     source = "offline"
 
-    def plan(self, owner: Owner, request: str, chunks: list[Chunk], feedback: list[str] | None = None) -> PlannerOutput:
+    def plan(self, owner: Owner, request: str, chunks: list[Chunk], feedback: list[str] | None = None,
+             notes: list[str] | None = None) -> PlannerOutput:
         by_doc: dict[str, Chunk] = {}
         for c in chunks:
             by_doc.setdefault(c.doc.id, c)   # best-scoring chunk per document
@@ -138,6 +141,18 @@ class OfflinePlanner:
                         citations=[chunk.id],
                         rationale=f"Suggested by '{chunk.doc.title}'." + (f" ({s['note']})" if s.get("note") else ""),
                     ))
+
+        # Health trends from the daily check-ins become a "call the vet" reminder,
+        # cited to a retrieved excerpt about vet visits or warning signs.
+        vet_docs = ("pvc-weekly-check", "aspca-cat-care", "pvc-vet-visits", "aaha-senior-care", "pvc-emergencies", "avma-overview")
+        vet_chunk = next((c for c in chunks if c.doc.id in vet_docs), None)
+        for note in notes or []:
+            m = re.search(r"for ([^,]+), and keep", note)
+            if note.startswith("Health check-ins:") and m and vet_chunk and owner.get_pet(m.group(1)):
+                proposals.append(ProposedTask(
+                    pet_name=m.group(1), description="Call the vet about check-ins", category="general",
+                    duration_minutes=5, priority="high", frequency="once", citations=[vet_chunk.id],
+                    rationale="Daily check-ins show a trend worth a vet call; sources advise calling the vet about warning signs."))
 
         # Highest priority first, then shortest, so trimming drops nice-to-haves.
         proposals.sort(key=lambda t: (-PRIORITY_RANK.get(t.priority, 0), t.duration_minutes))
@@ -186,7 +201,7 @@ class ClaudePlanner:
             f"<sources>\n{format_chunks(chunks)}\n</sources>"
         )
         if notes:
-            content += "\n\n<source_conflicts>\n" + "\n".join(f"- {n}" for n in notes) + "\n</source_conflicts>"
+            content += "\n\n<notes>\n" + "\n".join(f"- {n}" for n in notes) + "\n</notes>"
         if feedback:
             content += "\n\n<revision_feedback>\n" + "\n".join(f"- {f}" for f in feedback) + "\n</revision_feedback>"
         return [{"role": "user", "content": content}]
