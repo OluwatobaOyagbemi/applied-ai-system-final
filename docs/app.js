@@ -219,12 +219,12 @@
   /* ---------- stats ---------- */
   const s = D.summary || {};
   const STATS = [
-    { n: D.tests, of: D.tests, lbl: "automated tests passing", sub: "Retriever, guardrails, agent loop, approval + Module 2 scheduler" },
+    { n: D.tests, of: D.tests, lbl: "automated tests passing", sub: "Input, output, task and code guardrails, agent loop, retriever + Module 2 scheduler" },
     { n: s.scenarios_passed, of: s.scenarios, lbl: "end-to-end scenarios pass", sub: `${s.checks_passed}/${s.checks} individual checks` },
-    { n: s.red_team_caught, of: s.red_team, lbl: "unsafe outputs caught", sub: "Doses, human drugs, toxic treats, fake citations…" },
+    { n: s.red_team_caught + s.input_red_team_passed + s.output_red_team_passed, of: s.red_team + s.input_red_team + s.output_red_team, lbl: "red-team cases handled", sub: "Doses, toxic treats, fake citations, prompt injection, contact info, unsafe notes" },
     { n: Math.round((s.avg_confidence || 0) * 100), suffix: "%", lbl: "average confidence", sub: "Planner self-rating blended with guardrail survival" },
     { n: 100, suffix: "%", lbl: "of kept tasks cited", sub: "No citation to a retrieved excerpt means blocked" },
-    { n: s.avg_rounds, dec: 1, lbl: "planning rounds on average", sub: "The agent revised its own first draft every time" },
+    { n: s.consistency, dec: 2, lbl: "run-to-run consistency", sub: `Same scenarios run twice · ${s.avg_rounds} planning rounds on average` },
   ];
   const statsWrap = $("#stats");
   STATS.forEach((st) => {

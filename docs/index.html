@@ -43,8 +43,8 @@
           <a class="btn btn-ghost" href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final#-setup" target="_blank" rel="noopener">Run it locally</a>
         </div>
         <ul class="hero-proof reveal" aria-label="Key results">
-          <li><b data-count="73">73</b> tests passing</li>
-          <li><b data-count="13">13</b>/13 unsafe outputs caught</li>
+          <li><b>87</b> tests passing</li>
+          <li><b>10</b>/10 live scenarios pass</li>
           <li><b>100%</b> of tasks cited</li>
         </ul>
       </div>
@@ -143,7 +143,7 @@
         </div>
         <div class="rt-grid" id="rt-grid"></div>
       </div>
-      <p class="caveat reveal">Honest caveat: these results use the offline planner, which ignores the free-text request, so two request-driven scenarios pass trivially. Live Claude results are pending. See <a href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final/blob/main/model_card.md" target="_blank" rel="noopener">the model card</a> for limitations.</p>
+      <p class="caveat reveal">Live results from Claude Opus 5.5, each scenario run twice. The first live run also scored 10/10 but hid a guardrail false positive that silently dropped dental care; reporting blocks from every round exposed it, and the fix is in. See <a href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final/blob/main/model_card.md" target="_blank" rel="noopener">the model card</a> for limitations.</p>
     </section>
 
     <!-- ============ GUARDRAILS ============ -->

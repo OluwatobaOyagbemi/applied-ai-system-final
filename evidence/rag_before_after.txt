@@ -1,15 +1,20 @@
-RAG before/after · 2026-11-18 20:44 · planner: offline
+RAG before/after · 2026-11-18 21:20 · planner: claude
 Owner: Luna (cat, 11), 60 min. Request: "What should Luna's daily routine include?"
 
 BEFORE: single source (AVMA overview only)
   retrieved: 6 chunks from 1 document(s)
-  proposals kept: 0 · confidence 0.00
+  proposals kept: 4 · confidence 0.75
+    - Feed vet-recommended diet and portions (10 min, daily) <- avma-overview#nutrition-and-weight
+    - Daily play and enrichment session (15 min, daily) <- avma-overview#behavior-and-training
+    - Tooth care session (10 min, weekly) <- avma-overview#dental-health
+    - Confirm next vet checkup is booked (5 min, weekly) <- avma-overview#preventive-care, avma-overview#medications-and-the-veterinarian-client-patient-relationship-vcpr
 
 AFTER: multiple sources (AVMA + 8 Premier VetCare topic files)
   retrieved: 6 chunks from 4 document(s)
-  proposals kept: 5 · confidence 0.85
+  proposals kept: 6 · confidence 0.80
     - Refresh water bowl (5 min, daily) <- pvc-daily-routine#overview
-    - Clean litter box (10 min, daily) <- pvc-daily-routine#overview
-    - Teeth care with pet dental product (5 min, daily) <- pvc-grooming-dental#dental
-    - Play and check for signs of illness (15 min, daily) <- pvc-daily-routine#overview
-    - Book vet wellness exam (15 min, once) <- pvc-vet-visits#vaccinations
+    - Scoop litter box, wash hands (10 min, daily) <- pvc-daily-routine#overview
+    - Daily dental care with pet toothpaste (5 min, daily) <- pvc-grooming-dental#dental
+    - Gentle play and enrichment session (15 min, daily) <- avma-overview#behavior-and-training
+    - Confirm next vet and dental checkup (5 min, once) <- avma-overview#preventive-care, pvc-grooming-dental#dental
+    - Review vet's vaccine schedule (5 min, once) <- pvc-vet-visits#vaccinations
