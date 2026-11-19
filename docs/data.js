@@ -17,9 +17,9 @@ window.WW_DATA = {
   "avg_rounds": 1.0,
   "consistency": 0.83
  },
- "tests": 96,
- "chunks": 30,
- "documents": 9,
+ "tests": 97,
+ "chunks": 62,
+ "documents": 16,
  "scenarios": [
   {
    "key": "busy",

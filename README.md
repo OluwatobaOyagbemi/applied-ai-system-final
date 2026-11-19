@@ -28,7 +28,7 @@ This project extends **PawPal+**, my Module 2 project. PawPal+ was a Streamlit a
 | **Guardrails (3 layers)** | **Input:** emergencies stop planning, prompt injection is refused, contact info is redacted. **Output:** planner notes and links are screened. **Task:** Tasks with missing or fake citations, drug names, doses, toxic treats, wrong-species tasks, duplicates or impossible values are blocked. Medication reminders are flagged for vet confirmation. |
 | **Human in the loop** | The Streamlit review table pre-ticks safe tasks, leaves vet-sensitive ones unticked, and refuses blocked ones. `apply_approved()` is the only code path that writes to your pets. |
 | **Confidence + trace** | Each plan shows a confidence score (the planner's self-rating blended with how many proposals survived the guardrails), the share of grounded tasks, and a step-by-step trace. |
-| **Reliability testing** | 96 pytest tests plus `eval/run_eval.py`: 19 end-to-end scenarios (9 adversarial) and red teams for the input, output and task guardrails, run live against Claude or offline. |
+| **Reliability testing** | 97 pytest tests plus `eval/run_eval.py`: 19 end-to-end scenarios (9 adversarial) and red teams for the input, output and task guardrails, run live against Claude or offline. |
 | **Works without a key** | With no `ANTHROPIC_API_KEY`, or if the API fails, an offline planner builds proposals straight from the knowledge base, so the app and tests always run. |
 
 ---
@@ -102,7 +102,7 @@ cp .env.example .env                 # then paste your key into .env
 | `streamlit run app.py` | The app at http://localhost:8501. Add pets, then use **🤖 AI Care Planner**. |
 | `python -m pawpal_ai` | Terminal demo with sample pets (add `--offline` to skip Claude, `--approve` to print the final schedule). |
 | `python -m pawpal_ai "your request"` | Same, with your own request. |
-| `python -m pytest` | The 96-test suite (no API calls). |
+| `python -m pytest` | The 97-test suite (no API calls). |
 | `python -m eval.run_eval` | Reliability evaluation, offline. Writes `eval/results.md`. |
 | `python -m eval.run_eval --live --repeat 2` | Same with Claude, plus run-to-run consistency (uses API credits). |
 | `python -m eval.compare_styles` | Specialization stretch: baseline vs. few-shot planner, live. Writes `evidence/specialization.md`. |
@@ -193,7 +193,7 @@ python -m pawpal_ai --offline --approve "<request>"                 # see eviden
 | Agent reasoning traces (live Claude) | Retrieved chunk ids, each planning round, guardrail verdicts, the exact feedback sent back to the planner, and the final proposals | [ai_interactions.md](ai_interactions.md) |
 | RAG before/after | The same request with one source vs. the full knowledge base | [evidence/rag_before_after.txt](evidence/rag_before_after.txt) |
 | Evaluation + guardrail red teams (live Claude) | 19 scenarios run twice; task, input and output red teams | [eval/results.md](eval/results.md), [evidence/eval_output_live.txt](evidence/eval_output_live.txt) |
-| Unit tests | 96 named tests, all passing | [evidence/pytest_output.txt](evidence/pytest_output.txt) |
+| Unit tests | 97 named tests, all passing | [evidence/pytest_output.txt](evidence/pytest_output.txt) |
 
 **Evaluation summary** (`python -m eval.run_eval --live --repeat 2`, Claude Opus 5.5):
 
@@ -262,7 +262,7 @@ With only the AVMA principles page, Claude produced generic tasks and couldn't c
 
 | Stretch | Status | Evidence |
 |---|---|---|
-| **RAG enhancement**: custom documents from multiple sources | ✅ Two sources (AVMA + a veterinary clinic brochure) as 9 custom documents with YAML metadata, topic chunking, species filtering, and a documented safety filter | Before/after above. [knowledge/SOURCES.md](knowledge/SOURCES.md) |
+| **RAG enhancement**: custom documents from multiple sources | ✅ 16 custom documents from 9 publishers (AVMA, a veterinary clinic brochure, AKC, ASPCA, Merck Veterinary Manual, Cornell Feline Health Center, VCA, AAHA, VOHC) with YAML metadata, topic chunking, species filtering, access dates, and a documented safety filter | Before/after above. [knowledge/SOURCES.md](knowledge/SOURCES.md) |
 | **Agentic workflow enhancement**: multi-step decision chain with saved traces | ✅ Retrieve → plan → guardrails → scheduler dry-run → feedback → re-plan (up to 3 rounds), with a trace on every result | [ai_interactions.md](ai_interactions.md), `logs/pawpal_ai.log` |
 | **Test harness / evaluation script** | ✅ `eval/run_eval.py`: predefined scenarios + red team, pass/fail, confidence, rounds, consistency (`--repeat`) | [eval/results.md](eval/results.md) |
 | **Fine-tuning or specialization** | ✅ Few-shot examples + a constrained house style for the planner, measured live against the baseline prompt (below) | [evidence/specialization.md](evidence/specialization.md) |
@@ -290,7 +290,7 @@ Specialized:  Walk the dog  ->  Source: walk or jog your dog every day.
 
 ## 🧭 Design decisions and trade-offs
 
-- **Local BM25 instead of embeddings.** The knowledge base is about 30 chunks. BM25 in about 60 lines of pure Python is transparent (you can see why a chunk matched), needs no vector database or second API, and is fully reproducible. The trade-off: it matches words, not meaning, so "stiff joints" won't find "arthritis" unless both words appear. With hundreds of documents I'd switch to embeddings.
+- **Local BM25 instead of embeddings.** The knowledge base is 62 chunks. BM25 in about 60 lines of pure Python is transparent (you can see why a chunk matched), needs no vector database or second API, and is fully reproducible. The trade-off: it matches words, not meaning, so "stiff joints" won't find "arthritis" unless both words appear. With hundreds of documents I'd switch to embeddings.
 - **Guardrails in code, not in the prompt.** The system prompt tells Claude the rules too, but prompts are requests, not guarantees. Every safety rule is enforced again in `guardrails.py`, so a model mistake or a prompt-injection attempt in the request can't get an unsafe task into the schedule. The trade-off is false positives. For example, any task mentioning "flea" is sent for review even when it's harmless, though cleaning tasks are exempt.
 - **Citations are mandatory.** A task without a citation to a retrieved chunk is blocked. This turns "grounded" from a hope into a check, at the cost of rejecting a sensible task that the knowledge base doesn't happen to cover. That's why `SOURCES.md` lists the known gaps.
 - **Using the existing scheduler as the verifier.** Instead of asking the LLM whether its plan fits, the agent runs the real Module 2 `Scheduler` on a copy. That's deterministic, and it reuses tested code.
@@ -302,7 +302,7 @@ Specialized:  Walk the dog  ->  Source: walk or jog your dog every day.
 
 ## 🧪 Testing summary
 
-**Automated tests: 96/96 pass** (`python -m pytest`). 42 are carried over from Module 2 for the scheduler. The 54 new tests cover retrieval relevance; emergency detection in both layers (regex, and a fake AI classifier for the emergency / unsure / API-error paths), including false alarms like "doesn't walk far anymore" and "keep *poisonous* plants away"; prompt-injection refusal; contact-info redaction; every task guardrail, including the negation regression; output filtering; the revise loop; fallback when the API throws; the round cap; discarding a run that changes the owner's data; and re-checking at approval time.
+**Automated tests: 97/97 pass** (`python -m pytest`). 42 are carried over from Module 2 for the scheduler. The 55 new tests cover retrieval relevance; emergency detection in both layers (regex, and a fake AI classifier for the emergency / unsure / API-error paths), including false alarms like "doesn't walk far anymore" and "keep *poisonous* plants away"; prompt-injection refusal; contact-info redaction; every task guardrail, including the negation regression; output filtering; the revise loop; fallback when the API throws; the round cap; discarding a run that changes the owner's data; and re-checking at approval time.
 
 **Evaluation (live Claude Opus 5.5, each scenario run twice): 19/19 scenarios, 112/112 checks, red teams 13/13 task-level, 8/8 input, 5/5 output, run-to-run consistency 0.83.** The full table is in [eval/results.md](eval/results.md).
 

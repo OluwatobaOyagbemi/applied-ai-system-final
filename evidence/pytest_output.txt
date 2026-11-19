@@ -1,6 +1,7 @@
 $ python -m pytest -v
 tests/test_ai.py::test_knowledge_base_loads_and_chunks PASSED
 tests/test_ai.py::test_retrieval_finds_litter_guidance_for_cats PASSED
+tests/test_ai.py::test_web_sources_fill_known_gaps PASSED
 tests/test_ai.py::test_retrieval_finds_toxin_guidance PASSED
 tests/test_ai.py::test_retrieval_empty_query_returns_nothing PASSED
 tests/test_ai.py::test_emergency_requests_stop_planning[My dog is having a seizure right now] PASSED
@@ -95,4 +96,4 @@ tests/test_pawpal.py::test_owner_with_no_pets_gets_empty_plan PASSED
 tests/test_pawpal.py::test_pet_with_no_tasks_is_handled PASSED
 tests/test_pawpal.py::test_zero_available_minutes_skips_everything PASSED
 tests/test_pawpal.py::test_remove_task_and_remove_pet PASSED
-============================== 96 passed in 0.14s ==============================
+============================== 97 passed in 0.12s ==============================

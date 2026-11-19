@@ -17,7 +17,7 @@ Paraphrased summary. General guidance, not veterinary advice.
 
 - **Water:** keep fresh water available at all times and change it daily.
 - **Walks:** walk or jog your dog every day. (The brochure does not give a
-  length; the 30-minute suggested task is a PawPal+ default, not a source claim.)
+  length; see `akc_dog_exercise.md` for durations by age and breed.)
 - **Play:** play with your dog daily, and use that time to watch for signs of
   illness.
 - **Litter boxes:** clean cat litter boxes daily and wash hands afterwards.

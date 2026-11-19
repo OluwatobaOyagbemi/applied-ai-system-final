@@ -57,13 +57,20 @@ class FailingPlanner:
 # --- Retrieval -----------------------------------------------------------------
 
 def test_knowledge_base_loads_and_chunks():
-    assert len(RETRIEVER.documents) >= 9
+    assert len(RETRIEVER.documents) >= 16
     assert CITE in RETRIEVER.chunk_ids
 
 
 def test_retrieval_finds_litter_guidance_for_cats():
     hits = RETRIEVER.search("litter box cleaning", species="cat", k=3)
-    assert hits and hits[0].doc.id == "pvc-daily-routine"
+    assert hits and hits[0].doc.id in {"pvc-daily-routine", "aspca-cat-care"}
+
+
+def test_web_sources_fill_known_gaps():
+    """The 2026-11-18 web sources answer the gaps SOURCES.md used to list."""
+    assert RETRIEVER.search("how much exercise does my dog need", species="dog", k=1)[0].doc.id == "akc-exercise"
+    assert RETRIEVER.search("how often feed kitten", species="cat", k=1)[0].doc.id == "cornell-cat-feeding"
+    assert RETRIEVER.search("senior arthritis mobility", species="dog", k=1)[0].doc.id == "aaha-senior-care"
 
 
 def test_retrieval_finds_toxin_guidance():
