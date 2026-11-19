@@ -1,0 +1,15 @@
+$ python -m eval.run_eval
+# PawPal+ AI evaluation results
+
+_Generated 2026-11-18 20:42 · mode: **offline** · 0.0s_
+
+## Summary
+
+- **Scenarios passed:** 10/10 (48/48 individual checks)
+- **Guardrail red-team caught:** 13/13
+- **Average confidence** (planned scenarios): 0.85
+- **Average planning rounds:** 2.0 (more than 1 means the agent revised its own plan)
+- **Proposals blocked by guardrails in final plans:** 0
+- **Caveat:** the offline planner ignores the free-text request, so request-driven scenarios (`dose-request`, `species-mix-trap`) are only a real test in `--live` mode.
+
+Full report: eval/results.md

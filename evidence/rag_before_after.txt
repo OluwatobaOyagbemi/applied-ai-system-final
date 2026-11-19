@@ -1,0 +1,15 @@
+RAG before/after · 2026-11-18 20:41 · planner: offline
+Owner: Luna (cat, 11), 60 min. Request: "What should Luna's daily routine include?"
+
+BEFORE: single source (AVMA overview only)
+  retrieved: 6 chunks from 1 document(s)
+  proposals kept: 0 · confidence 0.00
+
+AFTER: multiple sources (AVMA + 8 Premier VetCare topic files)
+  retrieved: 6 chunks from 4 document(s)
+  proposals kept: 5 · confidence 0.85
+    - Refresh water bowl (5 min, daily) <- pvc-daily-routine#overview
+    - Clean litter box (10 min, daily) <- pvc-daily-routine#overview
+    - Teeth care with pet dental product (5 min, daily) <- pvc-grooming-dental#dental
+    - Play and check for signs of illness (15 min, daily) <- pvc-daily-routine#overview
+    - Book vet wellness exam (15 min, once) <- pvc-vet-visits#vaccinations

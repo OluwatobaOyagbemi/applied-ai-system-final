@@ -208,7 +208,7 @@ def main() -> int:
         "red_team": [{"name": n, "caught": ok, "detail": d} for n, ok, d in red],
     }, indent=2))
     print("\n".join(lines[:12]))
-    print(f"\nFull report: {EVAL_DIR / 'results.md'}")
+    print("\nFull report: eval/results.md")
     return 0 if n_pass == len(case_rows) and red_pass == len(red) else 1
 
 

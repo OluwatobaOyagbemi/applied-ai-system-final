@@ -1,0 +1,94 @@
+$ python -m pawpal_ai --offline --approve "Busy morning. Luna is getting older, keep her routine gentle."
+Request: 'Busy morning. Luna is getting older, keep her routine gentle.'
+Pets: Mochi (dog, 2), Luna (cat, 11) · 90 min from 07:30
+
+  [retrieve  ] Retrieved 10 guideline excerpts.
+  [plan      ] Round 1: offline planner proposed 11 task(s).
+  [guardrails] 11 ok, 0 need your review, 0 blocked.
+  [schedule  ] Dry run: 8 scheduled, 4 skipped, 0 conflict(s).
+  [revise    ] Asking the planner to fix 4 problem(s).
+  [plan      ] Round 2: offline planner proposed 7 task(s).
+  [guardrails] 7 ok, 0 need your review, 0 blocked.
+  [schedule  ] Dry run: 8 scheduled, 0 skipped, 0 conflict(s).
+  [done      ] Plan ready after 2 round(s). Confidence 0.85. Waiting for your approval.
+
+Planner: offline  · confidence 0.85 · grounded 100%
+Notes: Offline planner: tasks come straight from the knowledge base's suggested tasks. Revised to fit 90 min; left out: Book vet wellness exam for Mochi (medium, 15 min); Play and check for signs of illness for Luna (medium, 15 min); Book vet wellness exam for Luna (medium, 15 min); Bath with dog shampoo for Mochi (low, 30 min).
+
+Proposals:
+  ✅ ok        Mochi  Refresh water bowl                       5 min high   ← pvc-daily-routine#overview
+  ✅ ok        Luna   Refresh water bowl                       5 min high   ← pvc-daily-routine#overview
+  ✅ ok        Luna   Clean litter box                        10 min high   ← pvc-daily-routine#overview
+  ✅ ok        Mochi  Teeth care with pet dental product       5 min medium ← pvc-grooming-dental#grooming
+  ✅ ok        Luna   Teeth care with pet dental product       5 min medium ← pvc-grooming-dental#grooming
+  ✅ ok        Mochi  Pick up yard droppings                  10 min medium ← pvc-daily-routine#overview
+  ✅ ok        Mochi  Play and check for signs of illness     15 min medium ← pvc-daily-routine#overview
+
+Daily plan for Jordan (85 of 90 min used):
+  07:30 - Refresh water bowl for Mochi (5 min) - high priority, fits before 08:00
+  07:35 - Refresh water bowl for Luna (5 min) - high priority, fits before 08:00
+  07:40 - Clean litter box for Luna (10 min) - high priority, fits before 08:00
+  07:50 - Teeth care with pet dental product for Mochi (5 min) - medium priority, fits before 08:00
+  07:55 - Teeth care with pet dental product for Luna (5 min) - medium priority, fits before 08:00
+  08:00 - Morning walk for Mochi (30 min) - high priority, at preferred time 08:00
+  08:30 - Pick up yard droppings for Mochi (10 min) - medium priority, next open slot
+  08:40 - Play and check for signs of illness for Mochi (15 min) - medium priority, next open slot
+
+
+--------------------------------------------------------------------------------
+
+$ python -m pawpal_ai --offline --approve "Mochi ate chocolate an hour ago"
+Request: 'Mochi ate chocolate an hour ago'
+Pets: Mochi (dog, 2), Luna (cat, 11) · 90 min from 07:30
+
+  [stop      ] This sounds like it could be an emergency. PawPal+ is a daily planner, not medical help. Contact your veterinarian or an emergency animal clinic now. In the US, the ASPCA Animal Poison Control line is (888) 426-4435.
+
+⛔ This sounds like it could be an emergency. PawPal+ is a daily planner, not medical help. Contact your veterinarian or an emergency animal clinic now. In the US, the ASPCA Animal Poison Control line is (888) 426-4435.
+
+--------------------------------------------------------------------------------
+
+$ python -m pawpal_ai --offline --approve "The vet put Mochi on a monthly heartworm preventive, today is the day"
+Request: 'The vet put Mochi on a monthly heartworm preventive, today is the day'
+Pets: Mochi (dog, 2), Luna (cat, 11) · 90 min from 07:30
+
+  [retrieve  ] Retrieved 9 guideline excerpts.
+  [plan      ] Round 1: offline planner proposed 17 task(s).
+  [guardrails] 13 ok, 4 need your review, 0 blocked.
+  [schedule  ] Dry run: 11 scheduled, 7 skipped, 0 conflict(s).
+  [revise    ] Asking the planner to fix 7 problem(s).
+  [plan      ] Round 2: offline planner proposed 10 task(s).
+  [guardrails] 6 ok, 4 need your review, 0 blocked.
+  [schedule  ] Dry run: 11 scheduled, 0 skipped, 0 conflict(s).
+  [done      ] Plan ready after 2 round(s). Confidence 0.85. Waiting for your approval.
+
+Planner: offline  · confidence 0.85 · grounded 100%
+Notes: Offline planner: tasks come straight from the knowledge base's suggested tasks. Revised to fit 90 min; left out: Play and check for signs of illness for Mochi (medium, 15 min); Book vet wellness exam for Mochi (medium, 15 min); Play and check for signs of illness for Luna (medium, 15 min); Book vet wellness exam for Luna (medium, 15 min); Vacuum house (flea eggs) for Mochi (low, 20 min); Vacuum house (flea eggs) for Luna (low, 20 min); Bath with dog shampoo for Mochi (low, 30 min).
+
+Proposals:
+  ✅ ok        Mochi  Refresh water bowl                       5 min high   ← pvc-daily-routine#overview
+  ⚠️  review  Mochi  Give vet-prescribed flea/tick preventive   5 min high   ← pvc-parasites#fleas-and-ticks
+              ↳ vet-sensitive: confirm product and schedule with your veterinarian
+  ⚠️  review  Mochi  Give vet-prescribed heartworm preventive   5 min high   ← pvc-parasites#fleas-and-ticks
+              ↳ vet-sensitive: confirm product and schedule with your veterinarian
+  ✅ ok        Luna   Refresh water bowl                       5 min high   ← pvc-daily-routine#overview
+  ⚠️  review  Luna   Give vet-prescribed flea/tick preventive   5 min high   ← pvc-parasites#fleas-and-ticks
+              ↳ vet-sensitive: confirm product and schedule with your veterinarian
+  ⚠️  review  Luna   Give vet-prescribed heartworm preventive   5 min high   ← pvc-parasites#fleas-and-ticks
+              ↳ vet-sensitive: confirm product and schedule with your veterinarian
+  ✅ ok        Luna   Clean litter box                        10 min high   ← pvc-daily-routine#overview
+  ✅ ok        Mochi  Teeth care with pet dental product       5 min medium ← pvc-grooming-dental#grooming
+  ✅ ok        Luna   Teeth care with pet dental product       5 min medium ← pvc-grooming-dental#grooming
+  ✅ ok        Mochi  Pick up yard droppings                  10 min medium ← pvc-daily-routine#overview
+
+Daily plan for Jordan (70 of 90 min used):
+  07:30 - Refresh water bowl for Mochi (5 min) - high priority, fits before 08:00
+  07:35 - Refresh water bowl for Luna (5 min) - high priority, fits before 08:00
+  07:40 - Clean litter box for Luna (10 min) - high priority, fits before 08:00
+  07:50 - Teeth care with pet dental product for Mochi (5 min) - medium priority, fits before 08:00
+  07:55 - Teeth care with pet dental product for Luna (5 min) - medium priority, fits before 08:00
+  08:00 - Morning walk for Mochi (30 min) - high priority, at preferred time 08:00
+  08:30 - Pick up yard droppings for Mochi (10 min) - medium priority, next open slot
+
+
+--------------------------------------------------------------------------------
+

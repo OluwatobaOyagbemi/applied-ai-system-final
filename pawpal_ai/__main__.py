@@ -64,7 +64,7 @@ def main() -> None:
         apply_approved(owner, result.proposals, ok)
         from pawpal_system import Scheduler
         print("\n" + Scheduler(owner).explain_plan())
-    print(f"\nLog: {log_file}")
+    print("\nLog: logs/pawpal_ai.log")
 
 
 if __name__ == "__main__":

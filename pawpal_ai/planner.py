@@ -134,7 +134,9 @@ class OfflinePlanner:
                 if used + t.duration_minutes <= budget:
                     kept.append(t)
                     used += t.duration_minutes
-            notes += f" Revised: trimmed {len(proposals) - len(kept)} lower-priority task(s) to fit {budget} min."
+            dropped = [f"{t.description} for {t.pet_name} ({t.priority}, {t.duration_minutes} min)"
+                       for t in proposals if t not in kept]
+            notes += f" Revised to fit {budget} min; left out: {'; '.join(dropped)}."
             proposals = kept
         unknown = [p.name for p in owner.pets if p.species.lower() not in {"dog", "cat"}]
         confidence = 0.4 if unknown else 0.7
