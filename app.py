@@ -182,16 +182,27 @@ else:
 ui.section(4, "Ask the AI", "Retrieves vet guidance, drafts cited tasks, checks them, and waits for your approval.")
 
 
+def _code_version() -> str:
+    """Changes whenever the AI code changes, so cached agents are rebuilt after a
+    redeploy instead of an old agent being reused with new app code."""
+    from pathlib import Path
+    files = sorted((Path(__file__).parent / "pawpal_ai").glob("*.py")) + [Path(__file__).parent / "pawpal_system.py"]
+    return "-".join(f"{f.name}:{f.stat().st_mtime_ns}" for f in files if f.exists())
+
+
+CODE_VERSION = _code_version()
+
+
 @st.cache_resource
-def get_agent(key_present: bool) -> PawPalAgent:
-    # Cached per key state, so adding a key in Secrets later rebuilds the agent
-    # instead of reusing the offline one cached before the key existed.
+def get_agent(key_present: bool, code_version: str) -> PawPalAgent:
+    # Cached per key state and code version: adding a key in Secrets, or a new
+    # deploy, rebuilds the agent instead of reusing a stale one.
     return PawPalAgent(planner=default_planner())
 
 
 @st.cache_resource
-def get_offline_agent() -> PawPalAgent:
-    return PawPalAgent(planner=OfflinePlanner(), emergency_check=None)
+def get_offline_agent(code_version: str) -> PawPalAgent:
+    return PawPalAgent(planner=OfflinePlanner(), emergency_check=None, task_reviewer=None)
 
 
 @st.cache_resource
@@ -206,7 +217,7 @@ if usage["day"] != date.today():
 session_used = st.session_state.setdefault("ai_used", 0)
 
 _key = os.getenv("ANTHROPIC_API_KEY", "").strip()
-agent = get_agent(_key.startswith("sk-ant-") and "..." not in _key)
+agent = get_agent(_key.startswith("sk-ant-") and "..." not in _key, CODE_VERSION)
 claude_available = agent.planner.source == "claude"
 over_cap = usage["count"] >= DAILY_AI_LIMIT or session_used >= SESSION_AI_LIMIT
 using_claude = claude_available and not over_cap
@@ -215,11 +226,11 @@ if using_claude:
     st.caption(f"Using Claude (`{agent.planner.model}`) with the vet-sourced knowledge base · "
                f"{left} AI plan(s) left for you today.")
 elif claude_available:
-    agent = get_offline_agent()
+    agent = get_offline_agent(CODE_VERSION)
     st.caption("You've reached today's Claude limit for this public demo, so suggestions now come from "
                "the offline planner (same knowledge base and guardrails, no LLM).")
 else:
-    agent = get_offline_agent()
+    agent = get_offline_agent(CODE_VERSION)
     st.caption("Running in offline mode (no Claude key configured): suggestions come straight from the "
                "vet-sourced knowledge base, with the same guardrails. Running it yourself? Add "
                "`ANTHROPIC_API_KEY` to `.env` to use Claude.")
