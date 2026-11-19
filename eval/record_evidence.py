@@ -86,7 +86,7 @@ def rag_before_after(planner) -> str:
     rows = [f"RAG before/after · {datetime.now():%Y-%m-%d %H:%M} · planner: {getattr(planner, 'source', '?')}",
             f"Owner: Luna (cat, 11), 60 min. Request: {request!r}", ""]
     for label, subset in [("BEFORE: single source (AVMA overview only)", [d for d in docs if d.id == "avma-overview"]),
-                          ("AFTER: multiple sources (AVMA + 8 Premier VetCare topic files)", docs)]:
+                          (f"AFTER: full multi-source knowledge base ({len(docs)} documents)", docs)]:
         result = PawPalAgent(planner=planner, retriever=Retriever(subset)).run(make_owner(60, [("Luna", "cat", 11, "senior", [])]), request)
         rows.append(label)
         rows.append(f"  retrieved: {len(result.retrieved)} chunks from {len({c.doc.id for c in result.retrieved})} document(s)")

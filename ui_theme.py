@@ -8,7 +8,24 @@ rendered as HTML here; user input never goes through these helpers.
 
 from __future__ import annotations
 
+import base64
+from functools import lru_cache
+from pathlib import Path
+
 import streamlit as st
+
+from pet_art import ART, CAT_SVG, DOG_SVG, PATTERN_URI
+
+BANNER = Path(__file__).resolve().parent / "assets" / "photos" / "banner.jpg"
+PHOTO_CREDIT_URL = "https://unsplash.com/photos/a-dog-and-cat-sleeping-on-a-couch-wx2wNE-yjjg"
+
+
+@lru_cache(maxsize=1)
+def _banner_uri() -> str:
+    try:
+        return "data:image/jpeg;base64," + base64.b64encode(BANNER.read_bytes()).decode()
+    except OSError:
+        return ""
 
 SITE_URL = "https://oluwatobaoyagbemi.github.io/applied-ai-system-final/"
 REPO_URL = "https://github.com/OluwatobaOyagbemi/applied-ai-system-final"
@@ -31,7 +48,9 @@ html, body, [class*="css"], .stApp, .stMarkdown, p, label, input, textarea, butt
     radial-gradient(60vmax 60vmax at -10% -15%, rgba(255,181,71,.30), transparent 60%),
     radial-gradient(55vmax 55vmax at 110% 10%, rgba(255,61,127,.22), transparent 60%),
     radial-gradient(60vmax 60vmax at 40% 120%, rgba(162,59,236,.16), transparent 60%),
+    url("__PATTERN__"),
     #fff8f3 !important;
+  background-size: auto, auto, auto, 220px 220px, auto !important;
   background-attachment: fixed !important;
 }
 header[data-testid="stHeader"] { background: transparent !important; }
@@ -51,6 +70,22 @@ h1, h2, h3, h4 { font-family: "Bricolage Grotesque", sans-serif !important; lett
 .ww-title { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size: clamp(2.3rem, 7vw, 3.6rem); line-height:1.02; margin: 16px 0 10px; color: var(--ww-ink); }
 .ww-grad { background: var(--ww-grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
 .ww-lede { color: var(--ww-ink2); font-size: 1.06rem; max-width: 36em; margin: 0 0 6px; }
+
+/* photo banner + illustrated pets */
+.ww-banner { position: relative; border-radius: 28px; overflow: hidden; margin: 6px 0 26px; box-shadow: 0 30px 70px -30px rgba(255,61,127,.55), 0 10px 26px -12px rgba(31,20,48,.3); aspect-ratio: 1100 / 460; }
+.ww-banner img { display:block; width:100%; height:100%; object-fit: cover; object-position: center 40%; }
+.ww-banner::after { content:""; position:absolute; inset:0; background: linear-gradient(180deg, transparent 45%, rgba(31,20,48,.55)); }
+.ww-banner .ww-credit { position:absolute; right:14px; top:10px; text-shadow: 0 1px 3px rgba(0,0,0,.6); z-index:2; font-size:.72rem; color:#fff !important; opacity:.85; text-decoration:none !important; }
+.ww-banner .ww-chip { position:absolute; left:16px; bottom:14px; z-index:2; display:flex; gap:8px; flex-wrap:wrap; }
+.ww-banner .ww-chip span { background: rgba(255,255,255,.92); color: var(--ww-ink); font-weight:700; font-size:.8rem; padding:6px 12px; border-radius:999px; }
+.ww-pets { position:absolute; right: -6px; bottom: -14px; z-index:2; display:flex; }
+.ww-pets svg { width: 96px; height: 96px; filter: drop-shadow(0 8px 14px rgba(31,20,48,.3)); animation: wwbob 5s ease-in-out infinite; }
+.ww-pets svg:nth-child(2) { animation-delay: -2.5s; margin-left: -18px; }
+@keyframes wwbob { 50% { transform: translateY(-8px) rotate(-3deg); } }
+.ww-sec { position: relative; }
+.ww-peek { margin-left: auto; width: 58px; height: 58px; flex: none; animation: wwpeek 6s ease-in-out infinite; }
+.ww-peek svg { width: 100%; height: 100%; }
+@keyframes wwpeek { 0%, 70%, 100% { transform: translateY(0) rotate(0); } 80% { transform: translateY(-6px) rotate(-8deg); } 90% { transform: translateY(0) rotate(6deg); } }
 
 /* numbered section headers */
 .ww-sec { display:flex; align-items:center; gap:14px; margin: 34px 0 14px; }
@@ -103,13 +138,16 @@ textarea { border-radius: 14px !important; }
   .block-container { padding-left: 16px !important; padding-right: 16px !important; }
   .ww-sec h2 { font-size: 1.3rem !important; }
 }
-@media (prefers-reduced-motion: reduce) { .ww-dot { animation: none; } }
+@media (max-width: 640px) { html, body, .stApp, [data-testid="stAppViewContainer"], .block-container { overflow-x: hidden !important; max-width: 100vw !important; }
+  .ww-title { font-size: 2.1rem; overflow-wrap: anywhere; } .ww-pets { right: 4px; } }
+@media (max-width: 640px) { .ww-pets svg { width: 66px; height: 66px; } .ww-peek { width: 44px; height: 44px; } .ww-banner .ww-chip span { font-size: .7rem; } }
+@media (prefers-reduced-motion: reduce) { .ww-dot, .ww-pets svg, .ww-peek { animation: none; } }
 </style>
 """
 
 
 def apply_theme() -> None:
-    st.markdown(_CSS, unsafe_allow_html=True)
+    st.markdown(_CSS.replace("__PATTERN__", PATTERN_URI), unsafe_allow_html=True)
 
 
 def hero() -> None:
@@ -121,16 +159,29 @@ def hero() -> None:
     <a href="{REPO_URL}" target="_blank">GitHub</a>
   </div>
 </div>
+__BANNER__
 <span class="ww-eyebrow"><span class="ww-dot"></span>RAG · Agent · Guardrails · You approve</span>
 <div class="ww-title">Plan your pets' day,<br><span class="ww-grad">with sources you can see.</span></div>
 <p class="ww-lede">Tell WhiskerWise about your pets and your time. It looks up vet guidance, suggests cited tasks,
 blocks anything unsafe, and adds nothing until you approve it.</p>
-""", unsafe_allow_html=True)
+""".replace("__BANNER__", _banner_html()), unsafe_allow_html=True)
 
 
-def section(number: int, title: str, subtitle: str = "") -> None:
+def _banner_html() -> str:
+    uri = _banner_uri()
+    if not uri:
+        return ""
+    return (f'<div style="position:relative">'
+            f'<div class="ww-banner"><img src="{uri}" alt="A sleeping dog and cat curled up together on a couch">'
+            f'<div class="ww-chip"><span>🐶 Dogs</span><span>🐱 Cats</span><span>📚 Vet-sourced</span></div>'
+            f'<a class="ww-credit" href="{PHOTO_CREDIT_URL}" target="_blank">Photo: Micah Giszack / Unsplash</a></div>'
+            f'<div class="ww-pets">{DOG_SVG}{CAT_SVG}</div></div>')
+
+
+def section(number: int, title: str, subtitle: str = "", pet: str | None = None) -> None:
     sub = f"<p>{subtitle}</p>" if subtitle else ""
-    st.markdown(f'<div class="ww-sec"><span class="ww-num">{number}</span><div><h2>{title}</h2>{sub}</div></div>',
+    peek = f'<span class="ww-peek">{ART[pet]}</span>' if pet in ART else ""
+    st.markdown(f'<div class="ww-sec"><span class="ww-num">{number}</span><div><h2>{title}</h2>{sub}</div>{peek}</div>',
                 unsafe_allow_html=True)
 
 

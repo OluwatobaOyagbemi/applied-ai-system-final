@@ -65,7 +65,7 @@ if not owner.pets:
         st.rerun()
 
 # --- Owner ------------------------------------------------------------------
-ui.section(1, "Your day", "Who's planning, how much time you have, and when the day starts.")
+ui.section(1, "Your day", "Who's planning, how much time you have, and when the day starts.", pet="paw")
 col1, col2, col3 = st.columns(3)
 with col1:
     owner.name = st.text_input("Owner name", value=owner.name)
@@ -80,7 +80,7 @@ with col3:
 
 
 # --- Pets -------------------------------------------------------------------
-ui.section(2, "Your pets", "Add each pet. Notes help the AI, e.g. “senior, a little stiff”.")
+ui.section(2, "Your pets", "Add each pet. Notes help the AI, e.g. “senior, a little stiff”.", pet="dog")
 with st.form("add_pet", clear_on_submit=True):
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -113,7 +113,7 @@ else:
 # --- AI Care Planner ----------------------------------------------------------
 # Retrieve guidelines -> Claude proposes cited tasks -> guardrails check them ->
 # dry-run schedule -> revise. Nothing is added until the owner approves it here.
-ui.section(3, "Ask the AI", "Retrieves vet guidance, drafts cited tasks, checks them, and waits for your approval.")
+ui.section(3, "Ask the AI", "Retrieves vet guidance, drafts cited tasks, checks them, and waits for your approval.", pet="cat")
 
 
 @st.cache_resource
@@ -226,8 +226,9 @@ else:
                 picked = [i for i, row in enumerate(edited) if row["Add"]]
                 blocked_picked = [i for i in picked if result.proposals[i].verdict == BLOCKED]
                 added = apply_approved(owner, result.proposals, picked)
+                st.session_state.setdefault("ai_task_ids", set()).update(id(t) for t in added)
                 st.session_state.flash = (
-                    f"Added {len(added)} AI-suggested task(s)."
+                    f"Added {len(added)} AI-suggested task(s). They're in step 4 below, marked 🤖 AI."
                     + (f" Skipped {len(blocked_picked)} blocked task(s)." if blocked_picked else "")
                 )
                 del st.session_state.ai_result
@@ -238,44 +239,52 @@ else:
 
 
 # --- Tasks ------------------------------------------------------------------
-ui.section(4, "Tasks", "Approved AI suggestions and your own tasks. Mark done, filter, sort.")
+ui.section(4, "Tasks", "Everything on your list: approved AI suggestions and tasks you add yourself.", pet="dog")
 if not owner.pets:
     st.caption("Add a pet before adding tasks.")
 else:
-    with st.form("add_task", clear_on_submit=True):
-        col1, col2 = st.columns(2)
-        with col1:
-            task_pet = st.selectbox("Pet", [p.name for p in owner.pets])
-            description = st.text_input("Task", placeholder="e.g. Morning walk")
-            category = st.selectbox(
-                "Category", ["walk", "feeding", "meds", "enrichment", "grooming", "cleaning", "general"]
-            )
-        with col2:
-            duration = st.number_input("Duration (minutes)", min_value=1, max_value=240, value=20)
-            priority = st.selectbox("Priority", ["high", "medium", "low"])
-            frequency = st.selectbox("Frequency", ["daily", "weekly", "once"])
-        has_time = st.checkbox("Set a preferred time")
-        preferred = st.time_input("Preferred time", value="08:00", step=900)
-        if st.form_submit_button("Add task"):
-            if not description.strip():
-                st.error("Enter a task description.")
-            else:
-                try:
-                    owner.get_pet(task_pet).add_task(
-                        Task(
-                            description.strip(),
-                            int(duration),
-                            priority,
-                            frequency=frequency,
-                            time=preferred.strftime("%H:%M") if has_time else None,
-                            category=category,
-                        )
-                    )
-                    st.success(f"Added '{description.strip()}' for {task_pet}.")
-                except ValueError as err:
-                    st.error(str(err))
-
     scheduler = Scheduler(owner)
+    if "flash" in st.session_state:
+        st.success(st.session_state.pop("flash"))
+
+    # --- The task list comes first, so approved AI suggestions are easy to find ---
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        pet_filter = st.selectbox("Show pet", ["All pets"] + [p.name for p in owner.pets])
+    with col2:
+        status_filter = st.selectbox("Status", ["All", "Not done", "Done"])
+    with col3:
+        sort_by = st.selectbox("Sort by", ["Time", "Priority"])
+
+    shown = scheduler.filter_tasks(
+        pet_name=None if pet_filter == "All pets" else pet_filter,
+        completed={"All": None, "Not done": False, "Done": True}[status_filter],
+    )
+    shown = scheduler.sort_by_time(shown) if sort_by == "Time" else scheduler.sort_by_priority(shown)
+    ai_added = st.session_state.setdefault("ai_task_ids", set())
+
+    if shown:
+        st.dataframe(
+            [
+                {
+                    "Time": t.time or "flexible",
+                    "Pet": t.pet_name,
+                    "Task": t.description,
+                    "Min": t.duration_minutes,
+                    "Priority": t.priority,
+                    "Frequency": t.frequency,
+                    "From": "🤖 AI" if id(t) in ai_added else "✍️ You",
+                    "Status": "done" if t.completed
+                    else "due" if t.is_due_today() else f"next due {t.due_date:%a %b %d}",
+                }
+                for t in shown
+            ],
+            hide_index=True, width="stretch",
+        )
+    elif owner.get_all_tasks():
+        st.info("No tasks match these filters.")
+    else:
+        st.info("No tasks yet. Ask the AI in step 3 and click **Add approved tasks**, or add your own below.")
 
     # --- Mark complete (recurring tasks get their next copy automatically) ---
     due_now = scheduler.sort_by_time(scheduler.collect_tasks())
@@ -291,51 +300,14 @@ else:
             if st.button("Complete", width="stretch"):
                 done = due_now[labels.index(pick)]
                 next_task = scheduler.mark_task_complete(done)
+                if next_task is not None and id(done) in ai_added:
+                    ai_added.add(id(next_task))
                 st.session_state.flash = (
                     f"Completed '{done.description}' for {done.pet_name}. "
                     + (f"Next {done.frequency} copy is due {next_task.due_date:%a %b %d}."
                        if next_task else "One-time task, so it won't repeat.")
                 )
                 st.rerun()
-    if "flash" in st.session_state:
-        st.success(st.session_state.pop("flash"))
-
-    # --- Filter and sort the task list ---
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        pet_filter = st.selectbox("Show pet", ["All pets"] + [p.name for p in owner.pets])
-    with col2:
-        status_filter = st.selectbox("Status", ["All", "Not done", "Done"])
-    with col3:
-        sort_by = st.selectbox("Sort by", ["Time", "Priority"])
-
-    shown = scheduler.filter_tasks(
-        pet_name=None if pet_filter == "All pets" else pet_filter,
-        completed={"All": None, "Not done": False, "Done": True}[status_filter],
-    )
-    shown = scheduler.sort_by_time(shown) if sort_by == "Time" else scheduler.sort_by_priority(shown)
-
-    if shown:
-        st.dataframe(
-            [
-                {
-                    "Time": t.time or "flexible",
-                    "Pet": t.pet_name,
-                    "Task": t.description,
-                    "Min": t.duration_minutes,
-                    "Priority": t.priority,
-                    "Frequency": t.frequency,
-                    "Status": "done" if t.completed
-                    else "due" if t.is_due_today() else f"next due {t.due_date:%a %b %d}",
-                }
-                for t in shown
-            ],
-            hide_index=True, width="stretch",
-        )
-    elif owner.get_all_tasks():
-        st.info("No tasks match these filters.")
-    else:
-        st.info("No tasks yet. Add one above.")
 
     # --- Conflicts: shown live, in one block, with what happens and how to fix it ---
     conflicts = scheduler.detect_conflicts()
@@ -348,9 +320,50 @@ else:
             + "\n".join(f"- {c}" for c in conflicts)
         )
 
+    # --- Add your own task. The form clears after submit, so the pet choice is
+    # remembered in session state; otherwise it would jump back to the first pet.
+    pet_names = [p.name for p in owner.pets]
+    last_pet = st.session_state.get("last_task_pet")
+    with st.expander("➕ Add your own task", expanded=not owner.get_all_tasks()):
+        with st.form("add_task", clear_on_submit=True):
+            col1, col2 = st.columns(2)
+            with col1:
+                task_pet = st.selectbox("Pet", pet_names,
+                                        index=pet_names.index(last_pet) if last_pet in pet_names else 0)
+                description = st.text_input("Task", placeholder="e.g. Morning walk")
+                category = st.selectbox(
+                    "Category", ["walk", "feeding", "meds", "enrichment", "grooming", "cleaning", "general"]
+                )
+            with col2:
+                duration = st.number_input("Duration (minutes)", min_value=1, max_value=240, value=20)
+                priority = st.selectbox("Priority", ["high", "medium", "low"])
+                frequency = st.selectbox("Frequency", ["daily", "weekly", "once"])
+            has_time = st.checkbox("Set a preferred time")
+            preferred = st.time_input("Preferred time", value="08:00", step=900)
+            if st.form_submit_button("Add task", type="primary"):
+                st.session_state.last_task_pet = task_pet
+                if not description.strip():
+                    st.error(f"Enter a task description for {task_pet}.")
+                else:
+                    try:
+                        owner.get_pet(task_pet).add_task(
+                            Task(
+                                description.strip(),
+                                int(duration),
+                                priority,
+                                frequency=frequency,
+                                time=preferred.strftime("%H:%M") if has_time else None,
+                                category=category,
+                            )
+                        )
+                        st.session_state.flash = f"Added '{description.strip()}' for {task_pet}."
+                        st.rerun()
+                    except ValueError as err:
+                        st.error(str(err))
+
 
 # --- Schedule ---------------------------------------------------------------
-ui.section(5, "Today's schedule", "Fits the highest-priority tasks into your minutes, with a reason for each.")
+ui.section(5, "Today's schedule", "Fits the highest-priority tasks into your minutes, with a reason for each.", pet="cat")
 if st.button("Generate schedule", type="primary"):
     scheduler = Scheduler(owner)
     plan = scheduler.generate_plan()
