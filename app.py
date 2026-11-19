@@ -10,11 +10,22 @@ from pawpal_system import Owner, Pet, Scheduler, Task
 
 load_dotenv()
 # On Streamlit Community Cloud the key lives in the app's Secrets, never in the repo.
-try:
-    if "ANTHROPIC_API_KEY" in st.secrets and not os.getenv("ANTHROPIC_API_KEY"):
-        os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
-except Exception:   # no secrets file locally: fine, .env or offline mode is used
-    pass
+def _key_from_secrets() -> str:
+    """Find ANTHROPIC_API_KEY at the top level of Secrets or inside any [section]."""
+    try:
+        if "ANTHROPIC_API_KEY" in st.secrets:
+            return str(st.secrets["ANTHROPIC_API_KEY"]).strip().strip('"').strip("'")
+        for value in st.secrets.values():
+            if hasattr(value, "get") and value.get("ANTHROPIC_API_KEY"):
+                return str(value["ANTHROPIC_API_KEY"]).strip().strip('"').strip("'")
+    except Exception:   # no secrets file (local run) or unreadable TOML
+        pass
+    return ""
+
+
+_secret_key = _key_from_secrets()
+if _secret_key and os.getenv("ANTHROPIC_API_KEY", "").strip() in ("", "sk-ant-..."):
+    os.environ["ANTHROPIC_API_KEY"] = _secret_key
 setup_logging()
 
 # Usage caps for the public demo (CODE guardrail on cost). After either cap is
@@ -107,7 +118,9 @@ st.subheader("🤖 AI Care Planner")
 
 
 @st.cache_resource
-def get_agent() -> PawPalAgent:
+def get_agent(key_present: bool) -> PawPalAgent:
+    # Cached per key state, so adding a key in Secrets later rebuilds the agent
+    # instead of reusing the offline one cached before the key existed.
     return PawPalAgent(planner=default_planner())
 
 
@@ -127,7 +140,8 @@ if usage["day"] != date.today():
     usage.update(day=date.today(), count=0)
 session_used = st.session_state.setdefault("ai_used", 0)
 
-agent = get_agent()
+_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+agent = get_agent(_key.startswith("sk-ant-") and "..." not in _key)
 claude_available = agent.planner.source == "claude"
 over_cap = usage["count"] >= DAILY_AI_LIMIT or session_used >= SESSION_AI_LIMIT
 using_claude = claude_available and not over_cap

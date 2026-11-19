@@ -220,7 +220,8 @@ class ClaudePlanner:
 
 def default_planner() -> Planner:
     """Claude if an API key is configured, otherwise the offline planner."""
-    if os.getenv("ANTHROPIC_API_KEY", "").startswith("sk-ant-") and "..." not in os.getenv("ANTHROPIC_API_KEY", ""):
+    key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    if key.startswith("sk-ant-") and "..." not in key:
         try:
             return ClaudePlanner()
         except Exception as err:   # SDK missing or misconfigured

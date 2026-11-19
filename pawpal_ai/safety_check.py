@@ -81,7 +81,7 @@ class AIEmergencyCheck:
 
 def default_emergency_check():
     """The AI check when an API key is configured, else None (regex only)."""
-    key = os.getenv("ANTHROPIC_API_KEY", "")
+    key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     if key.startswith("sk-ant-") and "..." not in key:
         try:
             return AIEmergencyCheck()
