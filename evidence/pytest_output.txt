@@ -3,20 +3,20 @@ tests/test_ai.py::test_knowledge_base_loads_and_chunks PASSED
 tests/test_ai.py::test_retrieval_finds_litter_guidance_for_cats PASSED
 tests/test_ai.py::test_retrieval_finds_toxin_guidance PASSED
 tests/test_ai.py::test_retrieval_empty_query_returns_nothing PASSED
-tests/test_ai.py::test_emergency_requests_stop_planning
-tests/test_ai.py::test_emergency_requests_stop_planning
-tests/test_ai.py::test_emergency_requests_stop_planning
-tests/test_ai.py::test_emergency_requests_stop_planning
-tests/test_ai.py::test_normal_requests_pass
-tests/test_ai.py::test_normal_requests_pass
-tests/test_ai.py::test_normal_requests_pass
+tests/test_ai.py::test_emergency_requests_stop_planning[My dog is having a seizure right now] PASSED
+tests/test_ai.py::test_emergency_requests_stop_planning[Luna ate chocolate an hour ago] PASSED
+tests/test_ai.py::test_emergency_requests_stop_planning[he collapsed after the walk] PASSED
+tests/test_ai.py::test_emergency_requests_stop_planning[I think she was poisoned] PASSED
+tests/test_ai.py::test_normal_requests_pass[] PASSED
+tests/test_ai.py::test_normal_requests_pass[Busy morning, keep it short] PASSED
+tests/test_ai.py::test_normal_requests_pass[keep poisonous plants away from Luna] PASSED
 tests/test_ai.py::test_oversized_request_rejected PASSED
 tests/test_ai.py::test_good_task_is_ok PASSED
 tests/test_ai.py::test_ungrounded_task_blocked PASSED
 tests/test_ai.py::test_task_without_citation_blocked PASSED
-tests/test_ai.py::test_unsafe_medical_advice_blocked
-tests/test_ai.py::test_unsafe_medical_advice_blocked
-tests/test_ai.py::test_unsafe_medical_advice_blocked
+tests/test_ai.py::test_unsafe_medical_advice_blocked[Give aspirin for joint pain] PASSED
+tests/test_ai.py::test_unsafe_medical_advice_blocked[Give 5 ml syrup] PASSED
+tests/test_ai.py::test_unsafe_medical_advice_blocked[Induce vomiting with peroxide] PASSED
 tests/test_ai.py::test_toxic_treat_blocked_but_avoidance_allowed PASSED
 tests/test_ai.py::test_medication_reminder_needs_review PASSED
 tests/test_ai.py::test_species_mismatch_blocked PASSED
@@ -32,13 +32,13 @@ tests/test_ai.py::test_apply_approved_adds_only_ticked_and_never_blocked PASSED
 tests/test_ai.py::test_plan_schema_is_strict PASSED
 tests/test_pawpal.py::test_mark_complete_changes_status PASSED
 tests/test_pawpal.py::test_add_task_increases_pet_task_count PASSED
-tests/test_pawpal.py::test_invalid_task_values_raise
-tests/test_pawpal.py::test_invalid_task_values_raise
-tests/test_pawpal.py::test_invalid_task_values_raise
-tests/test_pawpal.py::test_invalid_task_values_raise
-tests/test_pawpal.py::test_invalid_task_values_raise
-tests/test_pawpal.py::test_invalid_task_values_raise
-tests/test_pawpal.py::test_invalid_task_values_raise
+tests/test_pawpal.py::test_invalid_task_values_raise[kwargs0] PASSED
+tests/test_pawpal.py::test_invalid_task_values_raise[kwargs1] PASSED
+tests/test_pawpal.py::test_invalid_task_values_raise[kwargs2] PASSED
+tests/test_pawpal.py::test_invalid_task_values_raise[kwargs3] PASSED
+tests/test_pawpal.py::test_invalid_task_values_raise[kwargs4] PASSED
+tests/test_pawpal.py::test_invalid_task_values_raise[kwargs5] PASSED
+tests/test_pawpal.py::test_invalid_task_values_raise[kwargs6] PASSED
 tests/test_pawpal.py::test_duplicate_pet_name_raises PASSED
 tests/test_pawpal.py::test_sort_by_time_is_chronological_with_flexible_last PASSED
 tests/test_pawpal.py::test_sort_by_time_keeps_insertion_order_for_ties PASSED
@@ -49,9 +49,9 @@ tests/test_pawpal.py::test_filter_tasks_with_no_filters_returns_everything PASSE
 tests/test_pawpal.py::test_filter_tasks_unknown_pet_returns_empty PASSED
 tests/test_pawpal.py::test_completing_daily_task_creates_copy_due_tomorrow PASSED
 tests/test_pawpal.py::test_completing_weekly_task_due_in_seven_days PASSED
-tests/test_pawpal.py::test_daily_recurrence_across_calendar_boundaries
-tests/test_pawpal.py::test_daily_recurrence_across_calendar_boundaries
-tests/test_pawpal.py::test_daily_recurrence_across_calendar_boundaries
+tests/test_pawpal.py::test_daily_recurrence_across_calendar_boundaries[done_on0-expected0] PASSED
+tests/test_pawpal.py::test_daily_recurrence_across_calendar_boundaries[done_on1-expected1] PASSED
+tests/test_pawpal.py::test_daily_recurrence_across_calendar_boundaries[done_on2-expected2] PASSED
 tests/test_pawpal.py::test_once_task_does_not_repeat_and_double_complete_is_ignored PASSED
 tests/test_pawpal.py::test_overdue_task_is_still_due PASSED
 tests/test_pawpal.py::test_mark_task_complete_for_task_without_pet_raises PASSED

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WhiskerWise · AI pet care you can trust</title>
+  <meta name="description" content="WhiskerWise plans your pets' day with AI that cites vet guidance, checks its own work, and never adds a task without your approval.">
+  <meta name="theme-color" content="#ff3d7f">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="bg-blobs" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <header class="nav" id="top">
+    <a class="brand" href="#top" aria-label="WhiskerWise home">
+      <span class="brand-mark" aria-hidden="true">🐾</span> WhiskerWise
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#demo">Demo</a>
+      <a href="#trust">Reliability</a>
+      <a href="#about">About</a>
+    </nav>
+    <a class="btn btn-ghost btn-sm" href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      <span>GitHub</span>
+    </a>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow reveal"><span class="pulse-dot"></span> RAG · Agent · Guardrails · Human in the loop</p>
+        <h1 class="reveal">Your pets' day,<br><span class="grad-text">planned by AI that<br>shows its sources.</span></h1>
+        <p class="lede reveal">WhiskerWise looks up real vet guidance before it suggests anything, checks every task against safety rules, fixes its own plan when time runs short, and never adds a thing until <strong>you</strong> say yes.</p>
+        <div class="cta-row reveal">
+          <a class="btn btn-grad" href="#demo">▶ Watch it plan</a>
+          <a class="btn btn-ghost" href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final#-setup" target="_blank" rel="noopener">Run it locally</a>
+        </div>
+        <ul class="hero-proof reveal" aria-label="Key results">
+          <li><b data-count="73">73</b> tests passing</li>
+          <li><b data-count="13">13</b>/13 unsafe outputs caught</li>
+          <li><b>100%</b> of tasks cited</li>
+        </ul>
+      </div>
+
+      <div class="hero-visual" aria-hidden="true">
+        <svg class="paw-trail" viewBox="0 0 600 600"><g id="paws"></g></svg>
+        <div class="sticker s1">📚 cites <code>pvc-daily-routine</code></div>
+        <div class="sticker s2">🛡️ blocked: “give aspirin”</div>
+        <div class="sticker s3">✨ revised plan · round 2</div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="ph-head">
+              <div class="story-ring sm"><span>🐶</span></div>
+              <div class="story-ring sm"><span>🐱</span></div>
+              <div><b>Today</b><small>Mochi &amp; Luna · 90 min</small></div>
+            </div>
+            <div class="ph-card c1"><span class="t">07:30</span><span>💧 Refresh water</span><em class="ok">✓</em></div>
+            <div class="ph-card c2"><span class="t">07:40</span><span>🧹 Clean litter box</span><em class="ok">✓</em></div>
+            <div class="ph-card c3"><span class="t">08:00</span><span>🦮 Morning walk</span><em class="ok">✓</em></div>
+            <div class="ph-card c4 warn"><span class="t">08:30</span><span>💊 Heartworm reminder</span><em class="rv">vet?</em></div>
+            <div class="ph-card c5 block"><span class="t">—</span><span>Give 2 aspirin</span><em class="bk">blocked</em></div>
+            <div class="ph-approve"><span class="toggle on"></span> You approve every task</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MARQUEE ============ -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>💧 water daily</span><span>🧹 litter daily</span><span>🦷 dental care</span><span>🩺 weekly health check</span><span>🦮 daily walks</span><span>🚫 no chocolate</span><span>💊 meds = vet's call</span><span>🐾 every task cited</span>
+        <span>💧 water daily</span><span>🧹 litter daily</span><span>🦷 dental care</span><span>🩺 weekly health check</span><span>🦮 daily walks</span><span>🚫 no chocolate</span><span>💊 meds = vet's call</span><span>🐾 every task cited</span>
+      </div>
+    </div>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="section" id="how">
+      <div class="section-head reveal">
+        <p class="kicker">How it works</p>
+        <h2>The model suggests. <span class="grad-text">The code verifies. You decide.</span></h2>
+        <p>Seven steps, from your request to your schedule. Tap a step to see what happens inside.</p>
+      </div>
+
+      <div class="pipeline reveal" role="tablist" aria-label="Pipeline steps">
+        <svg class="loop-arc" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true">
+          <path id="arc" d="M 640 110 C 600 10, 380 10, 340 110" />
+        </svg>
+        <span class="loop-label" aria-hidden="true">↺ revise up to 3×</span>
+        <div class="track" aria-hidden="true"><i></i><i></i><i></i></div>
+        <!-- steps injected by app.js -->
+      </div>
+      <div class="step-detail reveal" id="step-detail" role="tabpanel" aria-live="polite"></div>
+    </section>
+
+    <!-- ============ DEMO ============ -->
+    <section class="section demo" id="demo">
+      <div class="section-head reveal">
+        <p class="kicker">Interactive demo</p>
+        <h2>Watch a real run, <span class="grad-text">step by step.</span></h2>
+        <p>These are replays of recorded runs of the actual system (<span id="demo-mode">offline</span> planner). Pick a scenario.</p>
+      </div>
+
+      <div class="stories reveal" role="tablist" aria-label="Demo scenarios" id="stories"></div>
+
+      <div class="demo-grid reveal">
+        <div class="chat-phone">
+          <div class="chat-head"><span class="brand-mark sm">🐾</span><div><b>WhiskerWise</b><small id="chat-sub">AI care planner</small></div></div>
+          <div class="chat-body" id="chat-body" aria-live="polite"></div>
+        </div>
+        <div class="review">
+          <div class="review-head">
+            <h3>Your review</h3>
+            <div class="meters" id="meters"></div>
+          </div>
+          <div class="proposals" id="proposals"><p class="muted">Pick a scenario to start.</p></div>
+          <div class="review-foot" id="review-foot"></div>
+          <div class="timeline" id="timeline"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TRUST ============ -->
+    <section class="section" id="trust">
+      <div class="section-head reveal">
+        <p class="kicker">Reliability</p>
+        <h2>Don't take its word for it. <span class="grad-text">Check the numbers.</span></h2>
+        <p>Every number here comes from the committed test suite and evaluation script. Run <code>python -m eval.run_eval</code> to reproduce them.</p>
+      </div>
+      <div class="stats" id="stats"></div>
+
+      <div class="redteam reveal">
+        <div class="redteam-head">
+          <h3>🧪 Red team: what happens when the AI gets it wrong</h3>
+          <p>We fed the guardrails 13 deliberately bad proposals. Each was stopped or flagged.</p>
+        </div>
+        <div class="rt-grid" id="rt-grid"></div>
+      </div>
+      <p class="caveat reveal">Honest caveat: these results use the offline planner, which ignores the free-text request, so two request-driven scenarios pass trivially. Live Claude results are pending. See <a href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final/blob/main/model_card.md" target="_blank" rel="noopener">the model card</a> for limitations.</p>
+    </section>
+
+    <!-- ============ GUARDRAILS ============ -->
+    <section class="section">
+      <div class="cards4">
+        <article class="feature reveal"><div class="f-icon">🚨</div><h3>Emergencies stop everything</h3><p>“Ate chocolate”, “seizure”, “collapsed”: the planner never runs, and you're pointed to a vet and the ASPCA poison line.</p></article>
+        <article class="feature reveal"><div class="f-icon">📚</div><h3>No source, no task</h3><p>Every task must cite a retrieved excerpt from the vetted knowledge base. Missing or invented citations are blocked.</p></article>
+        <article class="feature reveal"><div class="f-icon">💊</div><h3>Doses are the vet's job</h3><p>Drug names, doses and home remedies are blocked in code, not just in the prompt. Prescriptions show up only as reminders.</p></article>
+        <article class="feature reveal"><div class="f-icon">🔁</div><h3>It checks its own work</h3><p>Each plan is dry-run on the real scheduler. Too long? Blocked tasks? The agent gets the feedback and tries again.</p></article>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section class="section" id="about">
+      <div class="about-grid">
+        <div class="about-copy reveal">
+          <p class="kicker">About the project</p>
+          <h2>From a rule-based scheduler <span class="grad-text">to an AI system you can audit.</span></h2>
+          <p><b>WhiskerWise</b> started as <b>PawPal+</b>, a Module 2 project: a Streamlit app where owners typed in every task and a priority-based scheduler fit them into the day. WhiskerWise keeps that scheduler as its engine and adds an AI layer that suggests the tasks, grounded in AVMA and veterinary-clinic guidance, with guardrails, human approval, logging and an evaluation harness.</p>
+          <div class="evolution">
+            <div class="evo old"><small>Module 2</small><b>PawPal+</b><span>Manual tasks · greedy scheduler · conflict warnings</span></div>
+            <div class="evo-arrow" aria-hidden="true">→</div>
+            <div class="evo new"><small>Final project</small><b>WhiskerWise</b><span>RAG · agent loop · guardrails · human review · evals</span></div>
+          </div>
+          <div class="cta-row">
+            <a class="btn btn-grad" href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final" target="_blank" rel="noopener">View the code</a>
+            <a class="btn btn-ghost" href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final/blob/main/model_card.md" target="_blank" rel="noopener">Read the model card</a>
+          </div>
+        </div>
+        <div class="stack reveal">
+          <h3>Built with</h3>
+          <ul class="chips">
+            <li>🐍 Python 3.13</li><li>🧠 Claude (Anthropic API)</li><li>🧾 Structured outputs</li><li>🔎 BM25 retrieval</li>
+            <li>🎈 Streamlit</li><li>🧪 pytest</li><li>📊 Eval harness</li><li>📝 Logging</li><li>🧜 Mermaid diagrams</li>
+          </ul>
+          <h3>Design choices</h3>
+          <ul class="decisions">
+            <li><b>Local BM25, not embeddings.</b> 30 chunks don't need a vector DB, and you can see why a chunk matched.</li>
+            <li><b>Rules in code, not just the prompt.</b> A prompt is a request; a guardrail is a guarantee.</li>
+            <li><b>Works offline.</b> No API key? A deterministic planner keeps everything runnable and testable.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p><span class="brand-mark sm">🐾</span> <b>WhiskerWise</b> · An applied AI final project, built on PawPal+.</p>
+    <p class="muted">General pet-care reminders, not veterinary advice. Always follow your veterinarian's instructions.</p>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
