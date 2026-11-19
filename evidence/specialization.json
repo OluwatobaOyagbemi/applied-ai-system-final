@@ -1,0 +1,150 @@
+{
+  "baseline": [
+    {
+      "tasks": 5,
+      "desc_words": 3.6,
+      "desc_le5": 100,
+      "verb_first": 60,
+      "pet_name_in_desc": 0,
+      "rat_words": 13.2,
+      "rat_le18": 100,
+      "freq_stated": 100,
+      "rounds": 1,
+      "blocked": 0
+    },
+    {
+      "tasks": 5,
+      "desc_words": 5.8,
+      "desc_le5": 20,
+      "verb_first": 60,
+      "pet_name_in_desc": 0,
+      "rat_words": 16.4,
+      "rat_le18": 60,
+      "freq_stated": 80,
+      "rounds": 1,
+      "blocked": 0
+    },
+    {
+      "tasks": 5,
+      "desc_words": 3.6,
+      "desc_le5": 100,
+      "verb_first": 80,
+      "pet_name_in_desc": 0,
+      "rat_words": 15.4,
+      "rat_le18": 80,
+      "freq_stated": 100,
+      "rounds": 1,
+      "blocked": 0
+    },
+    {
+      "tasks": 4,
+      "desc_words": 4.2,
+      "desc_le5": 50,
+      "verb_first": 75,
+      "pet_name_in_desc": 0,
+      "rat_words": 14.2,
+      "rat_le18": 100,
+      "freq_stated": 100,
+      "rounds": 1,
+      "blocked": 0
+    },
+    {
+      "tasks": 4,
+      "desc_words": 5,
+      "desc_le5": 75,
+      "verb_first": 100,
+      "pet_name_in_desc": 0,
+      "rat_words": 17.2,
+      "rat_le18": 75,
+      "freq_stated": 100,
+      "rounds": 1,
+      "blocked": 0
+    },
+    {
+      "tasks": 3,
+      "desc_words": 4.3,
+      "desc_le5": 67,
+      "verb_first": 0,
+      "pet_name_in_desc": 0,
+      "rat_words": 12.7,
+      "rat_le18": 100,
+      "freq_stated": 0,
+      "rounds": 1,
+      "blocked": 0
+    }
+  ],
+  "specialized": [
+    {
+      "tasks": 5,
+      "desc_words": 3.8,
+      "desc_le5": 100,
+      "verb_first": 80,
+      "pet_name_in_desc": 0,
+      "rat_words": 10.6,
+      "rat_le18": 100,
+      "freq_stated": 100,
+      "rounds": 1,
+      "blocked": 0
+    },
+    {
+      "tasks": 4,
+      "desc_words": 3.2,
+      "desc_le5": 100,
+      "verb_first": 100,
+      "pet_name_in_desc": 0,
+      "rat_words": 11.2,
+      "rat_le18": 100,
+      "freq_stated": 100,
+      "rounds": 1,
+      "blocked": 0
+    },
+    {
+      "tasks": 4,
+      "desc_words": 3.2,
+      "desc_le5": 100,
+      "verb_first": 100,
+      "pet_name_in_desc": 0,
+      "rat_words": 10.2,
+      "rat_le18": 100,
+      "freq_stated": 100,
+      "rounds": 1,
+      "blocked": 0
+    },
+    {
+      "tasks": 5,
+      "desc_words": 3.6,
+      "desc_le5": 100,
+      "verb_first": 100,
+      "pet_name_in_desc": 0,
+      "rat_words": 10,
+      "rat_le18": 100,
+      "freq_stated": 100,
+      "rounds": 1,
+      "blocked": 0
+    },
+    {
+      "tasks": 4,
+      "desc_words": 4.2,
+      "desc_le5": 100,
+      "verb_first": 100,
+      "pet_name_in_desc": 0,
+      "rat_words": 11.8,
+      "rat_le18": 100,
+      "freq_stated": 100,
+      "rounds": 1,
+      "blocked": 0
+    },
+    {
+      "tasks": 4,
+      "desc_words": 3,
+      "desc_le5": 100,
+      "verb_first": 100,
+      "pet_name_in_desc": 0,
+      "rat_words": 11.2,
+      "rat_le18": 100,
+      "freq_stated": 100,
+      "rounds": 1,
+      "blocked": 0
+    }
+  ]
+}

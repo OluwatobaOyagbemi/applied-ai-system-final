@@ -47,6 +47,8 @@ def main() -> None:
         print(f"\n⛔ {result.stop_reason}")
         return
 
+    if result.caution:
+        print(f"\n⚠️  {result.caution}")
     print(f"\nPlanner: {result.planner_source} {result.planner_model} · confidence {result.confidence:.2f} · "
           f"grounded {result.grounded_rate:.0%}")
     if result.planner_notes:

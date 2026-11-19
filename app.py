@@ -1,12 +1,26 @@
+import os
+from datetime import date
+
 import streamlit as st
 from dotenv import load_dotenv
 
-from pawpal_ai import PawPalAgent, apply_approved, default_planner, setup_logging
+from pawpal_ai import OfflinePlanner, PawPalAgent, apply_approved, default_planner, setup_logging
 from pawpal_ai.models import BLOCKED, NEEDS_REVIEW
 from pawpal_system import Owner, Pet, Scheduler, Task
 
 load_dotenv()
+# On Streamlit Community Cloud the key lives in the app's Secrets, never in the repo.
+try:
+    if "ANTHROPIC_API_KEY" in st.secrets and not os.getenv("ANTHROPIC_API_KEY"):
+        os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
+except Exception:   # no secrets file locally: fine, .env or offline mode is used
+    pass
 setup_logging()
+
+# Usage caps for the public demo (CODE guardrail on cost). After either cap is
+# hit, the app keeps working with the offline planner.
+DAILY_AI_LIMIT = int(os.getenv("WW_DAILY_AI_LIMIT", "30"))
+SESSION_AI_LIMIT = int(os.getenv("WW_SESSION_AI_LIMIT", "5"))
 
 st.set_page_config(page_title="WhiskerWise", page_icon="🐾", layout="centered")
 
@@ -20,6 +34,23 @@ if "owner" not in st.session_state:
     st.session_state.owner = Owner("Jordan")
 
 owner: Owner = st.session_state.owner
+
+
+def load_sample_pets() -> None:
+    """One-click sample data so first-time visitors can try the AI planner."""
+    sample = Owner("Jordan", available_minutes=60, day_start="07:30")
+    sample.add_pet(Pet("Mochi", "dog", age=2, notes="very energetic"))
+    sample.add_pet(Pet("Luna", "cat", age=11, notes="senior, a little stiff"))
+    sample.get_pet("Mochi").add_task(Task("Morning walk", 30, "high", time="08:00", category="walk"))
+    st.session_state.owner = sample
+    st.session_state.pop("ai_result", None)
+
+
+if not owner.pets:
+    st.info("👋 New here? Load two sample pets and try the AI planner in one click.")
+    if st.button("🐶🐱 Load sample pets", type="primary"):
+        load_sample_pets()
+        st.rerun()
 
 # --- Owner ------------------------------------------------------------------
 st.subheader("Owner")
@@ -80,10 +111,36 @@ def get_agent() -> PawPalAgent:
     return PawPalAgent(planner=default_planner())
 
 
+@st.cache_resource
+def get_offline_agent() -> PawPalAgent:
+    return PawPalAgent(planner=OfflinePlanner(), emergency_check=None)
+
+
+@st.cache_resource
+def usage_counter() -> dict:
+    """Claude plans used today, shared by every visitor of this app instance."""
+    return {"day": date.today(), "count": 0}
+
+
+usage = usage_counter()
+if usage["day"] != date.today():
+    usage.update(day=date.today(), count=0)
+session_used = st.session_state.setdefault("ai_used", 0)
+
 agent = get_agent()
-if agent.planner.source == "claude":
-    st.caption(f"Using Claude (`{agent.planner.model}`) with the PawPal+ knowledge base.")
+claude_available = agent.planner.source == "claude"
+over_cap = usage["count"] >= DAILY_AI_LIMIT or session_used >= SESSION_AI_LIMIT
+using_claude = claude_available and not over_cap
+if using_claude:
+    left = min(DAILY_AI_LIMIT - usage["count"], SESSION_AI_LIMIT - session_used)
+    st.caption(f"Using Claude (`{agent.planner.model}`) with the vet-sourced knowledge base · "
+               f"{left} AI plan(s) left for you today.")
+elif claude_available:
+    agent = get_offline_agent()
+    st.caption("You've reached today's Claude limit for this public demo, so suggestions now come from "
+               "the offline planner (same knowledge base and guardrails, no LLM).")
 else:
+    agent = get_offline_agent()
     st.caption("Offline mode: no `ANTHROPIC_API_KEY` found, so suggestions come straight from the "
                "knowledge base. Add a key to `.env` to use Claude.")
 
@@ -98,6 +155,9 @@ else:
     if st.button("✨ Suggest a plan", type="primary"):
         with st.status("Planning…", expanded=True) as status:
             result = agent.run(owner, request)
+            if using_claude:   # every Claude-backed run counts, including emergency stops
+                usage["count"] += 1
+                st.session_state.ai_used = session_used + 1
             for step in result.trace:
                 st.write(f"**{step.stage}** · {step.message}")
             status.update(label="Stopped" if result.stopped else "Plan ready for your review",
@@ -108,6 +168,8 @@ else:
     if result is not None:
         if result.stopped:
             st.error(result.stop_reason)
+        if result.caution:
+            st.warning(f"⚠️ {result.caution}")
         elif not result.proposals:
             st.info("The AI didn't find anything new to suggest.")
         else:

@@ -7,9 +7,14 @@ tests/test_ai.py::test_emergency_requests_stop_planning[My dog is having a seizu
 tests/test_ai.py::test_emergency_requests_stop_planning[Luna ate chocolate an hour ago] PASSED
 tests/test_ai.py::test_emergency_requests_stop_planning[he collapsed after the walk] PASSED
 tests/test_ai.py::test_emergency_requests_stop_planning[I think she was poisoned] PASSED
+tests/test_ai.py::test_keyword_free_emergencies_caught_offline[Mochi has been lying down all day, won't get up and hasn't eaten since yesterday] PASSED
+tests/test_ai.py::test_keyword_free_emergencies_caught_offline[Milo keeps going to the litter box but nothing comes out] PASSED
+tests/test_ai.py::test_keyword_free_emergencies_caught_offline[Luna can't stand up this morning] PASSED
 tests/test_ai.py::test_normal_requests_pass[] PASSED
 tests/test_ai.py::test_normal_requests_pass[Busy morning, keep it short] PASSED
 tests/test_ai.py::test_normal_requests_pass[keep poisonous plants away from Luna] PASSED
+tests/test_ai.py::test_normal_requests_pass[Mochi doesn't walk far anymore, keep walks short] PASSED
+tests/test_ai.py::test_normal_requests_pass[Luna hasn't eaten her breakfast yet, plan her day] PASSED
 tests/test_ai.py::test_oversized_request_rejected PASSED
 tests/test_ai.py::test_good_task_is_ok PASSED
 tests/test_ai.py::test_ungrounded_task_blocked PASSED
@@ -44,6 +49,10 @@ tests/test_ai.py::test_safe_planner_notes_untouched PASSED
 tests/test_ai.py::test_round_cap_cannot_be_raised PASSED
 tests/test_ai.py::test_run_that_mutates_owner_is_discarded PASSED
 tests/test_ai.py::test_apply_rechecks_at_approval_time PASSED
+tests/test_ai.py::test_ai_check_stops_emergency_regex_missed PASSED
+tests/test_ai.py::test_ai_check_unsure_or_failed_plans_with_caution[unsure] PASSED
+tests/test_ai.py::test_ai_check_unsure_or_failed_plans_with_caution[error] PASSED
+tests/test_ai.py::test_ai_check_skipped_when_regex_already_stopped_or_no_request PASSED
 tests/test_pawpal.py::test_mark_complete_changes_status PASSED
 tests/test_pawpal.py::test_add_task_increases_pet_task_count PASSED
 tests/test_pawpal.py::test_invalid_task_values_raise[kwargs0] PASSED
@@ -86,4 +95,4 @@ tests/test_pawpal.py::test_owner_with_no_pets_gets_empty_plan PASSED
 tests/test_pawpal.py::test_pet_with_no_tasks_is_handled PASSED
 tests/test_pawpal.py::test_zero_available_minutes_skips_everything PASSED
 tests/test_pawpal.py::test_remove_task_and_remove_pet PASSED
-============================== 87 passed in 0.07s ==============================
+============================== 96 passed in 0.14s ==============================

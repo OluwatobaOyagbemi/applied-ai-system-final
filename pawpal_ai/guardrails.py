@@ -52,6 +52,13 @@ EMERGENCY_PATTERNS = [
     r"\bchok(e|ing)\b", r"\bcollaps", r"\bunconscious\b", r"\bbleeding\b",
     r"\bheat ?stroke\b", r"\bhit by (a )?car\b", r"\bpoison(ed|ing)\b", r"\bate (some |a )?(chocolate|antifreeze|grapes?|raisins?|xylitol|rat poison)",
     r"\bswallowed\b", r"\bvomit(ing)? blood\b", r"\bgr[ae]y gums\b", r"\bin shock\b",
+    # Added after the hard eval cases showed keyword-free emergencies slipping
+    # through offline. The AI check (safety_check.py) still covers new wordings.
+    r"\b(won'?t|can'?t|cannot|unable to) (get up|stand)\b", r"\b(can'?t|cannot|unable to) (walk|move)\b",
+    r"\b(hasn'?t|has not|won'?t|isn'?t|not) (eaten|eating|drunk|drinking)\b.{0,30}\b(since|for|in|all) ",
+    r"\bnothing (comes|came|is coming) out\b", r"\bstraining to (pee|urinate)\b", r"\bcan'?t (pee|urinate)\b",
+    r"\bunresponsive\b", r"\bpale gums\b", r"\bblue gums\b", r"\bbloated\b", r"\b(won'?t|can'?t) stop (vomiting|shaking|bleeding)\b",
+    r"\bhit by\b", r"\bbitten by\b", r"\bfell (off|from)\b",
 ]
 
 # Specific drugs or home remedies the planner must never suggest. Taken from

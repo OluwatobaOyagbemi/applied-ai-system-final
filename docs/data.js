@@ -2,10 +2,10 @@
 window.WW_DATA = {
  "mode": "live",
  "summary": {
-  "scenarios_passed": 10,
-  "scenarios": 10,
-  "checks_passed": 48,
-  "checks": 48,
+  "scenarios_passed": 19,
+  "scenarios": 19,
+  "checks_passed": 112,
+  "checks": 112,
   "red_team_caught": 13,
   "red_team": 13,
   "input_red_team_passed": 8,
@@ -13,11 +13,11 @@ window.WW_DATA = {
   "output_red_team_passed": 5,
   "output_red_team": 5,
   "blocked_all_rounds": 0,
-  "avg_confidence": 0.9,
+  "avg_confidence": 0.91,
   "avg_rounds": 1.0,
-  "consistency": 0.95
+  "consistency": 0.83
  },
- "tests": 87,
+ "tests": 96,
  "chunks": 30,
  "documents": 9,
  "scenarios": [
@@ -43,6 +43,10 @@ window.WW_DATA = {
    "stopped": false,
    "stopReason": "",
    "trace": [
+    {
+     "stage": "input",
+     "message": "AI safety check: not an emergency."
+    },
     {
      "stage": "retrieve",
      "message": "Retrieved 10 guideline excerpts."
@@ -78,8 +82,30 @@ window.WW_DATA = {
    ],
    "proposals": [
     {
+     "pet": "Mochi",
+     "task": "Refresh water bowl",
+     "min": 2,
+     "priority": "high",
+     "verdict": "ok",
+     "cites": [
+      "pvc-daily-routine#overview"
+     ],
+     "issues": []
+    },
+    {
      "pet": "Luna",
-     "task": "Scoop litter box, wash hands",
+     "task": "Refresh water bowl",
+     "min": 2,
+     "priority": "high",
+     "verdict": "ok",
+     "cites": [
+      "pvc-daily-routine#overview"
+     ],
+     "issues": []
+    },
+    {
+     "pet": "Luna",
+     "task": "Scoop litter box",
      "min": 5,
      "priority": "high",
      "verdict": "ok",
@@ -89,30 +115,8 @@ window.WW_DATA = {
      "issues": []
     },
     {
-     "pet": "Luna",
-     "task": "Change to fresh water",
-     "min": 2,
-     "priority": "high",
-     "verdict": "ok",
-     "cites": [
-      "pvc-daily-routine#overview"
-     ],
-     "issues": []
-    },
-    {
      "pet": "Mochi",
-     "task": "Change to fresh water",
-     "min": 2,
-     "priority": "high",
-     "verdict": "ok",
-     "cites": [
-      "pvc-daily-routine#overview"
-     ],
-     "issues": []
-    },
-    {
-     "pet": "Mochi",
-     "task": "Quick play and health check",
+     "task": "Play and watch health",
      "min": 5,
      "priority": "medium",
      "verdict": "ok",
@@ -126,25 +130,25 @@ window.WW_DATA = {
     {
      "time": "07:30",
      "pet": "Mochi",
-     "task": "Change to fresh water",
+     "task": "Refresh water bowl",
      "min": 2
     },
     {
      "time": "07:32",
      "pet": "Luna",
-     "task": "Change to fresh water",
+     "task": "Refresh water bowl",
      "min": 2
     },
     {
      "time": "07:34",
      "pet": "Luna",
-     "task": "Scoop litter box, wash hands",
+     "task": "Scoop litter box",
      "min": 5
     },
     {
      "time": "07:39",
      "pet": "Mochi",
-     "task": "Quick play and health check",
+     "task": "Play and watch health",
      "min": 5
     },
     {
@@ -175,6 +179,10 @@ window.WW_DATA = {
    "stopped": false,
    "stopReason": "",
    "trace": [
+    {
+     "stage": "input",
+     "message": "AI safety check: not an emergency."
+    },
     {
      "stage": "retrieve",
      "message": "Retrieved 7 guideline excerpts."
@@ -208,7 +216,29 @@ window.WW_DATA = {
    "proposals": [
     {
      "pet": "Mochi",
-     "task": "Give heartworm preventive per vet",
+     "task": "Refresh water bowl",
+     "min": 5,
+     "priority": "high",
+     "verdict": "ok",
+     "cites": [
+      "pvc-daily-routine#overview"
+     ],
+     "issues": []
+    },
+    {
+     "pet": "Mochi",
+     "task": "Walk the dog",
+     "min": 30,
+     "priority": "high",
+     "verdict": "ok",
+     "cites": [
+      "pvc-daily-routine#overview"
+     ],
+     "issues": []
+    },
+    {
+     "pet": "Mochi",
+     "task": "Give vet-prescribed heartworm preventive",
      "min": 5,
      "priority": "high",
      "verdict": "needs_review",
@@ -222,30 +252,8 @@ window.WW_DATA = {
     },
     {
      "pet": "Mochi",
-     "task": "Refresh fresh water",
-     "min": 5,
-     "priority": "high",
-     "verdict": "ok",
-     "cites": [
-      "pvc-daily-routine#overview"
-     ],
-     "issues": []
-    },
-    {
-     "pet": "Mochi",
-     "task": "Daily walk",
-     "min": 30,
-     "priority": "high",
-     "verdict": "ok",
-     "cites": [
-      "pvc-daily-routine#overview"
-     ],
-     "issues": []
-    },
-    {
-     "pet": "Mochi",
-     "task": "Play and check for illness signs",
-     "min": 15,
+     "task": "Play and watch health",
+     "min": 10,
      "priority": "medium",
      "verdict": "ok",
      "cites": [
@@ -255,8 +263,8 @@ window.WW_DATA = {
     },
     {
      "pet": "Mochi",
-     "task": "Pick up yard droppings",
-     "min": 5,
+     "task": "Remove yard droppings",
+     "min": 10,
      "priority": "low",
      "verdict": "ok",
      "cites": [
@@ -269,32 +277,32 @@ window.WW_DATA = {
     {
      "time": "07:30",
      "pet": "Mochi",
-     "task": "Give heartworm preventive per vet",
+     "task": "Refresh water bowl",
      "min": 5
     },
     {
      "time": "07:35",
      "pet": "Mochi",
-     "task": "Refresh fresh water",
+     "task": "Give vet-prescribed heartworm preventive",
      "min": 5
     },
     {
      "time": "07:40",
      "pet": "Mochi",
-     "task": "Daily walk",
+     "task": "Walk the dog",
      "min": 30
     },
     {
      "time": "08:10",
      "pet": "Mochi",
-     "task": "Play and check for illness signs",
-     "min": 15
+     "task": "Play and watch health",
+     "min": 10
     },
     {
-     "time": "08:25",
+     "time": "08:20",
      "pet": "Mochi",
-     "task": "Pick up yard droppings",
-     "min": 5
+     "task": "Remove yard droppings",
+     "min": 10
     }
    ],
    "confidence": 0.93,

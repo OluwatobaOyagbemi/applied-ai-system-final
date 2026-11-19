@@ -34,6 +34,7 @@ from . import guardrails
 from .models import BLOCKED, NEEDS_REVIEW, OK, PlannerOutput, ProposedTask, TraceStep
 from .planner import OfflinePlanner, Planner, default_planner
 from .retriever import Chunk, Retriever
+from .safety_check import default_emergency_check
 
 log = logging.getLogger(__name__)
 
@@ -64,6 +65,7 @@ class AgentResult:
     planner_model: str = ""
     planner_notes: str = ""
     planner_confidence: float = 0.0
+    caution: str = ""                     # shown to the owner when the AI safety check was unsure or failed
 
     @property
     def counts(self) -> dict[str, int]:
@@ -89,8 +91,13 @@ class AgentResult:
 
 class PawPalAgent:
     def __init__(self, planner: Planner | None = None, retriever: Retriever | None = None,
-                 max_rounds: int = 3, chunks_per_pet: int = 6):
+                 max_rounds: int = 3, chunks_per_pet: int = 6, emergency_check="auto"):
         self.planner = planner or default_planner()
+        # INPUT guardrail, layer 2: an AI emergency classifier behind the regex.
+        # "auto" = use it whenever Claude is the planner (an API key is set).
+        if emergency_check == "auto":
+            emergency_check = default_emergency_check() if getattr(self.planner, "source", "") == "claude" else None
+        self.emergency_check = emergency_check
         self.retriever = retriever or Retriever()
         # CODE guardrail: never more than HARD_MAX_ROUNDS planner calls per run,
         # whatever the caller asks for, so a loop can't run up API costs.
@@ -167,6 +174,24 @@ class PawPalAgent:
         if check.redactions:
             result.trace.append(TraceStep("input", f"Removed {check.redactions} piece(s) of contact info before planning."))
         request = check.cleaned
+        if self.emergency_check is not None and request.strip():
+            pets = "; ".join(f"{p.name}: {p.species}, age {p.age}. {p.notes}" for p in owner.pets)
+            verdict = self.emergency_check.check(request, pets)
+            if verdict.verdict == "emergency":
+                result.stopped = True
+                result.stop_reason = (f"This may be an emergency ({verdict.reason.rstrip('.')}). WhiskerWise is a daily "
+                                      "planner, not medical help. Contact your veterinarian or an emergency animal "
+                                      "clinic now. In the US, the ASPCA Animal Poison Control line is (888) 426-4435.")
+                result.trace.append(TraceStep("stop", result.stop_reason, {"emergency": True, "layer": "ai"}))
+                log.warning("Agent stopped by AI emergency check: %s", verdict.reason)
+                return result
+            if verdict.verdict in ("unsure", "error"):
+                result.caution = ("If your pet seems unwell or this is a sudden change, contact your veterinarian "
+                                  "before following any plan.")
+                why = verdict.reason if verdict.verdict == "unsure" else "the AI safety check couldn't run"
+                result.trace.append(TraceStep("input", f"Safety check: {why}. Planning, with a caution shown."))
+            else:
+                result.trace.append(TraceStep("input", "AI safety check: not an emergency."))
         profile = guardrails.check_owner(owner)
         if not profile.ok:
             result.stopped, result.stop_reason = True, profile.reason

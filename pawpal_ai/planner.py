@@ -73,6 +73,21 @@ Rules:
 - If revision feedback is included, fix every listed problem."""
 
 
+# Specialization: few-shot examples plus a constrained house style. Compared
+# against the baseline prompt by eval/compare_styles.py (see evidence/specialization.md).
+SPECIALIZED_STYLE = """
+
+House style (follow exactly):
+- `description`: start with an imperative verb, 2 to 5 words, no pet name, no punctuation.
+- `rationale`: one sentence of at most 18 words that names how often the source says to do it (daily, weekly, twice a year...), then nothing else.
+- Prefer the shortest duration that does the job; group nothing (one task per activity).
+
+Examples of good tasks (format only; always cite the real excerpt ids you were given):
+{"pet_name": "Rex", "description": "Refresh water bowl", "category": "feeding", "duration_minutes": 5, "priority": "high", "frequency": "daily", "time": "", "citations": ["pvc-daily-routine#overview"], "rationale": "Source: keep fresh water available and change it daily."}
+{"pet_name": "Tom", "description": "Scoop litter box", "category": "cleaning", "duration_minutes": 10, "priority": "high", "frequency": "daily", "time": "", "citations": ["pvc-daily-routine#overview"], "rationale": "Source: clean litter boxes daily and wash hands afterwards."}
+{"pet_name": "Rex", "description": "Run weekly health check", "category": "general", "duration_minutes": 10, "priority": "medium", "frequency": "weekly", "time": "", "citations": ["pvc-weekly-check#overview"], "rationale": "Source: examine your pet weekly and call the vet if anything fails."}"""
+
+
 class Planner(Protocol):
     def plan(self, owner: Owner, request: str, chunks: list[Chunk], feedback: list[str] | None = None) -> PlannerOutput: ...
 
@@ -150,7 +165,7 @@ class ClaudePlanner:
 
     source = "claude"
 
-    def __init__(self, model: str | None = None, client=None, effort: str = "medium"):
+    def __init__(self, model: str | None = None, client=None, effort: str = "medium", style: str | None = None):
         import anthropic   # imported here so offline use never needs the SDK
 
         self.anthropic = anthropic
@@ -159,6 +174,8 @@ class ClaudePlanner:
         # failing API degrades to the offline planner instead of freezing the app.
         self.client = client or anthropic.Anthropic(timeout=90.0, max_retries=2)
         self.effort = effort
+        self.style = style or os.getenv("PAWPAL_STYLE", "specialized")   # "specialized" | "baseline"
+        self.system_prompt = SYSTEM_PROMPT + (SPECIALIZED_STYLE if self.style == "specialized" else "")
 
     def _build_messages(self, owner: Owner, request: str, chunks: list[Chunk], feedback: list[str] | None) -> list[dict]:
         content = (
@@ -175,7 +192,7 @@ class ClaudePlanner:
         response = self.client.beta.messages.create(
             model=self.model,
             max_tokens=16000,
-            system=SYSTEM_PROMPT,
+            system=self.system_prompt,
             messages=self._build_messages(owner, request, chunks, feedback),
             output_config={"effort": self.effort, "format": {"type": "json_schema", "schema": PLAN_SCHEMA}},
             # Server-side fallback: if a safety classifier declines, the API

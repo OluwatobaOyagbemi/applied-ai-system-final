@@ -24,6 +24,7 @@
       <a href="#demo">Demo</a>
       <a href="#trust">Reliability</a>
       <a href="#about">About</a>
+      <a href="#try">Try it</a>
     </nav>
     <a class="btn btn-ghost btn-sm" href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final" target="_blank" rel="noopener">
       <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -39,8 +40,8 @@
         <h1 class="reveal">Your pets' day,<br><span class="grad-text">planned by AI that<br>shows its sources.</span></h1>
         <p class="lede reveal">WhiskerWise looks up real vet guidance before it suggests anything, checks every task against safety rules, fixes its own plan when time runs short, and never adds a thing until <strong>you</strong> say yes.</p>
         <div class="cta-row reveal">
-          <a class="btn btn-grad" href="#demo">▶ Watch it plan</a>
-          <a class="btn btn-ghost" href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final#-setup" target="_blank" rel="noopener">Run it locally</a>
+          <a class="btn btn-grad" href="https://whiskerwise.streamlit.app" target="_blank" rel="noopener">🚀 Try the live app</a>
+          <a class="btn btn-ghost" href="#demo">▶ Watch it plan</a>
         </div>
         <ul class="hero-proof reveal" aria-label="Key results">
           <li><b>87</b> tests passing</li>
@@ -70,6 +71,28 @@
             <div class="ph-approve"><span class="toggle on"></span> You approve every task</div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- ============ TRY IT ============ -->
+    <section class="section try" id="try">
+      <div class="try-card reveal">
+        <div class="try-copy">
+          <p class="kicker">Use it for real</p>
+          <h2>Plan your own pets' day <span class="grad-text">in under a minute.</span></h2>
+          <p>The live app runs the full system: retrieval, Claude, every guardrail, and the approval step. No sign-up needed. Click <b>Load sample pets</b>, or add your own, then hit <b>Suggest a plan</b>.</p>
+          <div class="cta-row">
+            <a class="btn btn-grad" href="https://whiskerwise.streamlit.app" target="_blank" rel="noopener">🚀 Open WhiskerWise</a>
+            <a class="btn btn-ghost" href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final#-setup" target="_blank" rel="noopener">Run it locally</a>
+          </div>
+          <p class="muted small-note">Public demo: up to 5 Claude-powered plans per visitor and a daily cap overall. After that it keeps working with the offline planner. General reminders, not veterinary advice.</p>
+        </div>
+        <ol class="try-steps">
+          <li><span>1</span><div><b>Add pets</b><small>or load the sample dog and cat</small></div></li>
+          <li><span>2</span><div><b>Ask for a plan</b><small>“busy morning, Luna is getting older”</small></div></li>
+          <li><span>3</span><div><b>Review &amp; approve</b><small>see sources, warnings and blocked tasks</small></div></li>
+          <li><span>4</span><div><b>Get your schedule</b><small>timed to fit your minutes</small></div></li>
+        </ol>
       </div>
     </section>
 
@@ -169,7 +192,8 @@
             <div class="evo new"><small>Final project</small><b>WhiskerWise</b><span>RAG · agent loop · guardrails · human review · evals</span></div>
           </div>
           <div class="cta-row">
-            <a class="btn btn-grad" href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final" target="_blank" rel="noopener">View the code</a>
+            <a class="btn btn-grad" href="https://whiskerwise.streamlit.app" target="_blank" rel="noopener">Try the live app</a>
+            <a class="btn btn-ghost" href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final" target="_blank" rel="noopener">View the code</a>
             <a class="btn btn-ghost" href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final/blob/main/model_card.md" target="_blank" rel="noopener">Read the model card</a>
           </div>
         </div>

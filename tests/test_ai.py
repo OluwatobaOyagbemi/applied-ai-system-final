@@ -88,7 +88,18 @@ def test_emergency_requests_stop_planning(text):
     assert not check.ok and check.emergency
 
 
-@pytest.mark.parametrize("text", ["", "Busy morning, keep it short", "keep poisonous plants away from Luna"])
+@pytest.mark.parametrize("text", [
+    "Mochi has been lying down all day, won't get up and hasn't eaten since yesterday",
+    "Milo keeps going to the litter box but nothing comes out",
+    "Luna can't stand up this morning",
+])
+def test_keyword_free_emergencies_caught_offline(text):
+    assert check_request(text).emergency
+
+
+@pytest.mark.parametrize("text", ["", "Busy morning, keep it short", "keep poisonous plants away from Luna",
+                                  "Mochi doesn't walk far anymore, keep walks short",
+                                  "Luna hasn't eaten her breakfast yet, plan her day"])
 def test_normal_requests_pass(text):
     assert check_request(text).ok
 
@@ -310,3 +321,40 @@ def test_apply_rechecks_at_approval_time():
     p = proposal()
     p.description = "Give aspirin"          # tampered after planning, verdict still "ok"
     assert apply_approved(owner, [p], [0, 0, 5]) == []
+
+
+# --- INPUT guardrail, layer 2: AI emergency check (fake classifier, no API) ---------------
+
+from pawpal_ai.safety_check import SafetyVerdict  # noqa: E402
+
+
+class FakeCheck:
+    def __init__(self, verdict):
+        self.verdict, self.calls = verdict, 0
+
+    def check(self, request, pets_summary=""):
+        self.calls += 1
+        return SafetyVerdict(self.verdict, "won't get up and stopped eating")
+
+
+def test_ai_check_stops_emergency_regex_missed():
+    check = FakeCheck("emergency")
+    planner = ScriptedPlanner([proposal()])
+    result = PawPalAgent(planner=planner, retriever=RETRIEVER, emergency_check=check).run(
+        make_owner(), "Mochi won't get up and hasn't eaten since yesterday")
+    assert result.stopped and "veterinarian" in result.stop_reason and planner.feedback_seen == []
+
+
+@pytest.mark.parametrize("verdict", ["unsure", "error"])
+def test_ai_check_unsure_or_failed_plans_with_caution(verdict):
+    result = PawPalAgent(planner=ScriptedPlanner([proposal()]), retriever=RETRIEVER,
+                         emergency_check=FakeCheck(verdict)).run(make_owner(), "Luna seems a bit off today")
+    assert not result.stopped and result.proposals and "veterinarian" in result.caution
+
+
+def test_ai_check_skipped_when_regex_already_stopped_or_no_request():
+    check = FakeCheck("not_emergency")
+    agent = PawPalAgent(planner=ScriptedPlanner([proposal()]), retriever=RETRIEVER, emergency_check=check)
+    agent.run(make_owner(), "Mochi ate chocolate")
+    agent.run(make_owner(), "")
+    assert check.calls == 0

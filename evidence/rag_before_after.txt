@@ -1,20 +1,18 @@
-RAG before/after · 2026-11-18 21:20 · planner: claude
+RAG before/after · 2026-11-18 21:46 · planner: claude
 Owner: Luna (cat, 11), 60 min. Request: "What should Luna's daily routine include?"
 
 BEFORE: single source (AVMA overview only)
   retrieved: 6 chunks from 1 document(s)
-  proposals kept: 4 · confidence 0.75
-    - Feed vet-recommended diet and portions (10 min, daily) <- avma-overview#nutrition-and-weight
-    - Daily play and enrichment session (15 min, daily) <- avma-overview#behavior-and-training
-    - Tooth care session (10 min, weekly) <- avma-overview#dental-health
-    - Confirm next vet checkup is booked (5 min, weekly) <- avma-overview#preventive-care, avma-overview#medications-and-the-veterinarian-client-patient-relationship-vcpr
+  proposals kept: 3 · confidence 0.75
+    - Serve vet-recommended meals (10 min, daily) <- avma-overview#nutrition-and-weight
+    - Hold gentle play session (15 min, daily) <- avma-overview#behavior-and-training
+    - Brush teeth (5 min, weekly) <- avma-overview#dental-health
 
 AFTER: multiple sources (AVMA + 8 Premier VetCare topic files)
   retrieved: 6 chunks from 4 document(s)
-  proposals kept: 6 · confidence 0.80
+  proposals kept: 5 · confidence 0.82
     - Refresh water bowl (5 min, daily) <- pvc-daily-routine#overview
-    - Scoop litter box, wash hands (10 min, daily) <- pvc-daily-routine#overview
-    - Daily dental care with pet toothpaste (5 min, daily) <- pvc-grooming-dental#dental
-    - Gentle play and enrichment session (15 min, daily) <- avma-overview#behavior-and-training
-    - Confirm next vet and dental checkup (5 min, once) <- avma-overview#preventive-care, pvc-grooming-dental#dental
-    - Review vet's vaccine schedule (5 min, once) <- pvc-vet-visits#vaccinations
+    - Scoop litter box (10 min, daily) <- pvc-daily-routine#overview
+    - Brush teeth with pet toothpaste (5 min, daily) <- pvc-grooming-dental#dental
+    - Play enrichment session (15 min, daily) <- avma-overview#behavior-and-training
+    - Book vet dental checkup (5 min, once) <- pvc-grooming-dental#dental, avma-overview#preventive-care
