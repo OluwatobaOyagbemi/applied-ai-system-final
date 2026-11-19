@@ -65,7 +65,7 @@ if not owner.pets:
         st.rerun()
 
 # --- Owner ------------------------------------------------------------------
-ui.section(1, "Your day", "Who's planning, how much time you have, and when the day starts.", pet="paw")
+ui.section(1, "Your day", "Who's planning, how much time you have, and when the day starts.")
 col1, col2, col3 = st.columns(3)
 with col1:
     owner.name = st.text_input("Owner name", value=owner.name)
@@ -80,7 +80,7 @@ with col3:
 
 
 # --- Pets -------------------------------------------------------------------
-ui.section(2, "Your pets", "Add each pet. Notes help the AI, e.g. “senior, a little stiff”.", pet="dog")
+ui.section(2, "Your pets", "Add each pet. Notes help the AI, e.g. “senior, a little stiff”.")
 with st.form("add_pet", clear_on_submit=True):
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -113,7 +113,7 @@ else:
 # --- AI Care Planner ----------------------------------------------------------
 # Retrieve guidelines -> Claude proposes cited tasks -> guardrails check them ->
 # dry-run schedule -> revise. Nothing is added until the owner approves it here.
-ui.section(3, "Ask the AI", "Retrieves vet guidance, drafts cited tasks, checks them, and waits for your approval.", pet="cat")
+ui.section(3, "Ask the AI", "Retrieves vet guidance, drafts cited tasks, checks them, and waits for your approval.")
 
 
 @st.cache_resource
@@ -239,7 +239,7 @@ else:
 
 
 # --- Tasks ------------------------------------------------------------------
-ui.section(4, "Tasks", "Everything on your list: approved AI suggestions and tasks you add yourself.", pet="dog")
+ui.section(4, "Tasks", "Everything on your list: approved AI suggestions and tasks you add yourself.")
 if not owner.pets:
     st.caption("Add a pet before adding tasks.")
 else:
@@ -363,7 +363,7 @@ else:
 
 
 # --- Schedule ---------------------------------------------------------------
-ui.section(5, "Today's schedule", "Fits the highest-priority tasks into your minutes, with a reason for each.", pet="cat")
+ui.section(5, "Today's schedule", "Fits the highest-priority tasks into your minutes, with a reason for each.")
 if st.button("Generate schedule", type="primary"):
     scheduler = Scheduler(owner)
     plan = scheduler.generate_plan()
