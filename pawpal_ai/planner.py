@@ -70,7 +70,8 @@ Rules:
 - Use "time" only when the owner asked for a specific time; otherwise leave it as an empty string.
 - Keep descriptions short (under 8 words) and the rationale to one sentence that says what the source recommends.
 - Set `confidence` lower when the sources are thin for this pet (for example an unusual species) and say so in `notes`.
-- If revision feedback is included, fix every listed problem."""
+- If revision feedback is included, fix every listed problem.
+- If source conflicts are listed, don't pick a side: say in the rationale that the sources differ and that the owner should confirm with their vet."""
 
 
 # Specialization: few-shot examples plus a constrained house style. Compared
@@ -177,23 +178,27 @@ class ClaudePlanner:
         self.style = style or os.getenv("PAWPAL_STYLE", "specialized")   # "specialized" | "baseline"
         self.system_prompt = SYSTEM_PROMPT + (SPECIALIZED_STYLE if self.style == "specialized" else "")
 
-    def _build_messages(self, owner: Owner, request: str, chunks: list[Chunk], feedback: list[str] | None) -> list[dict]:
+    def _build_messages(self, owner: Owner, request: str, chunks: list[Chunk], feedback: list[str] | None,
+                        notes: list[str] | None = None) -> list[dict]:
         content = (
             f"<pets>\n{describe_owner(owner)}\n</pets>\n\n"
             f"<request>\n{request.strip() or '(no extra request)'}\n</request>\n\n"
             f"<sources>\n{format_chunks(chunks)}\n</sources>"
         )
+        if notes:
+            content += "\n\n<source_conflicts>\n" + "\n".join(f"- {n}" for n in notes) + "\n</source_conflicts>"
         if feedback:
             content += "\n\n<revision_feedback>\n" + "\n".join(f"- {f}" for f in feedback) + "\n</revision_feedback>"
         return [{"role": "user", "content": content}]
 
-    def plan(self, owner: Owner, request: str, chunks: list[Chunk], feedback: list[str] | None = None) -> PlannerOutput:
+    def plan(self, owner: Owner, request: str, chunks: list[Chunk], feedback: list[str] | None = None,
+             notes: list[str] | None = None) -> PlannerOutput:
         a = self.anthropic
         response = self.client.beta.messages.create(
             model=self.model,
             max_tokens=16000,
             system=self.system_prompt,
-            messages=self._build_messages(owner, request, chunks, feedback),
+            messages=self._build_messages(owner, request, chunks, feedback, notes),
             output_config={"effort": self.effort, "format": {"type": "json_schema", "schema": PLAN_SCHEMA}},
             # Server-side fallback: if a safety classifier declines, the API
             # retries on a fallback model inside the same call.

@@ -290,13 +290,17 @@ def check_task(
             if t.completed:
                 continue
             same_name = _norm(t.description) == _norm(task.description)
-            similar = t.category == task.category and _key_words(t.description) & _key_words(task.description)
+            similar = (t.category == task.category and t.frequency == task.frequency
+                       and _key_words(t.description) & _key_words(task.description))
             if same_name or similar:
                 flag(BLOCKED, f"duplicate: {pet.name} already has '{t.description}'")
                 break
     for prior in already_proposed or []:
-        if prior.pet_name == task.pet_name and _norm(prior.description) == _norm(task.description):
-            flag(BLOCKED, "duplicate of another proposed task")
+        same = _norm(prior.description) == _norm(task.description)
+        similar = (prior.category == task.category and prior.frequency == task.frequency
+                   and _key_words(prior.description) & _key_words(task.description))
+        if prior.pet_name == task.pet_name and (same or similar):
+            flag(BLOCKED, f"duplicate of another proposed task ('{prior.description}')")
             break
 
     task.verdict, task.issues = verdict, issues

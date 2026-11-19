@@ -28,13 +28,23 @@ _STOPWORDS = set(
 )
 
 
+# A few synonyms so owners' words meet the sources' words.
+_SYNONYMS = {"veterinarian": "vet", "veterinarians": "vet", "veterinary": "vet", "vets": "vet",
+             "checkup": "exam", "checkups": "exam", "examination": "exam", "examinations": "exam",
+             "teeth": "tooth", "elderly": "senior", "old": "senior", "older": "senior", "aging": "senior",
+             "puppies": "puppy", "kittens": "kitten", "food": "feeding", "feed": "feeding", "meals": "meal"}
+
+
 def tokenize(text: str) -> list[str]:
-    """Lowercase word tokens with stopwords removed and a light plural strip."""
+    """Lowercase word tokens with stopwords and bare numbers removed, synonyms
+    folded, and a light plural strip. Numbers are dropped because they match
+    ages and amounts ("12 months") rather than topics."""
     words = re.findall(r"[a-z0-9]+", text.lower())
     out = []
     for w in words:
-        if w in _STOPWORDS or len(w) < 2:
+        if w in _STOPWORDS or len(w) < 2 or w.isdigit():
             continue
+        w = _SYNONYMS.get(w, w)
         if len(w) > 4 and w.endswith("s") and not w.endswith("ss"):
             w = w[:-1]
         out.append(w)

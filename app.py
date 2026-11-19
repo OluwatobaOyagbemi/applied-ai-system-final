@@ -193,6 +193,14 @@ else:
             c3.metric("Grounded in sources", f"{result.grounded_rate:.0%}")
             if result.planner_notes:
                 st.caption(f"Planner notes: {result.planner_notes}")
+            if result.source_conflicts:
+                with st.container(border=True):
+                    st.markdown("**⚖️ The sources disagree.** WhiskerWise won't pick a side; ask your vet which applies.")
+                    for conflict in result.source_conflicts:
+                        st.markdown(f"**{conflict.topic.capitalize()}**")
+                        for claim in conflict.claims:
+                            stage = f" (for {claim.stage} pets)" if claim.stage else ""
+                            st.markdown(f"- *{claim.source}*{stage}: “{claim.sentence}” `{claim.chunk_id}`")
 
             icon = {BLOCKED: "⛔ blocked", NEEDS_REVIEW: "⚠️ check with vet"}
             rows = [

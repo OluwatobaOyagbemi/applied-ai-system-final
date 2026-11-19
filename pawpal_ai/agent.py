@@ -25,6 +25,7 @@ only write, and it runs only after the owner approves.
 from __future__ import annotations
 
 import copy
+import inspect
 import logging
 from dataclasses import dataclass, field
 
@@ -33,6 +34,7 @@ from pawpal_system import Owner, Scheduler, Task
 from . import guardrails
 from .models import BLOCKED, NEEDS_REVIEW, OK, PlannerOutput, ProposedTask, TraceStep
 from .planner import OfflinePlanner, Planner, default_planner
+from .conflicts import Conflict, find_conflicts, matching_conflict
 from .retriever import Chunk, Retriever
 from .safety_check import default_emergency_check
 
@@ -66,6 +68,7 @@ class AgentResult:
     planner_notes: str = ""
     planner_confidence: float = 0.0
     caution: str = ""                     # shown to the owner when the AI safety check was unsure or failed
+    source_conflicts: list[Conflict] = field(default_factory=list)   # retrieved sources that disagree
 
     @property
     def counts(self) -> dict[str, int]:
@@ -111,20 +114,32 @@ class PawPalAgent:
         """One query per pet (species, life stage, notes, request) plus the
         request alone, merged and de-duplicated by chunk id."""
         found: dict[str, Chunk] = {}
-        for pet in owner.pets:
-            stage = "puppy kitten young" if pet.age < 1 else "senior older" if pet.age >= 8 else "adult"
-            query = f"{pet.species} {stage} daily care routine feeding water exercise play grooming {pet.notes} {request}"
-            for c in self.retriever.search(query, species=pet.species, k=self.chunks_per_pet):
+
+        def add(chunks: list[Chunk]) -> None:
+            for c in chunks:
                 if c.id not in found or c.score > found[c.id].score:
                     found[c.id] = c
-        if request.strip():
-            for c in self.retriever.search(request, k=3):
-                found.setdefault(c.id, c)
+
+        for pet in owner.pets:
+            senior_age = 7 if pet.species.lower() == "dog" else 10
+            stage = "puppy kitten young" if pet.age < 1 else "senior" if pet.age >= senior_age else "adult"
+            query = f"{pet.species} {stage} daily care routine feeding water exercise play grooming {pet.notes} {request}"
+            add(self.retriever.search(query, species=pet.species, k=self.chunks_per_pet))
+            # Life-stage guidance (senior care, puppy/kitten care) can be crowded
+            # out by the general query, so it gets its own small search.
+            if stage != "adult":
+                stage_query = ("senior aging arthritis mobility vet exam" if stage == "senior"
+                               else "puppy kitten feeding meals vaccines socialization")
+                add(self.retriever.search(f"{pet.species} {stage_query}", species=pet.species, k=2))
+            if request.strip():   # the request on its own, within this pet's species
+                add(self.retriever.search(request, species=pet.species, k=3))
         return sorted(found.values(), key=lambda c: c.score, reverse=True)
 
     def _plan(self, owner: Owner, request: str, chunks: list[Chunk], feedback: list[str] | None,
-              result: AgentResult) -> PlannerOutput:
+              result: AgentResult, notes: list[str] | None = None) -> PlannerOutput:
         try:
+            if notes and "notes" in inspect.signature(self.planner.plan).parameters:
+                return self.planner.plan(owner, request, chunks, feedback, notes=notes)
             return self.planner.plan(owner, request, chunks, feedback)
         except Exception as err:   # API down, refusal, bad JSON: degrade, don't crash
             log.exception("Planner failed; falling back to offline planner")
@@ -213,11 +228,20 @@ class PawPalAgent:
             return result
         allowed = {c.id for c in chunks}
 
+        # Novel step: notice when the retrieved sources disagree, instead of
+        # letting the planner silently pick one.
+        result.source_conflicts = find_conflicts(chunks, library=self.retriever.chunks)
+        notes = [c.summary() + " Mention both views and tell the owner to confirm with their vet."
+                 for c in result.source_conflicts]
+        if result.source_conflicts:
+            result.trace.append(TraceStep("conflicts", f"{len(result.source_conflicts)} source conflict(s): "
+                                          + " ".join(c.summary() for c in result.source_conflicts)))
+
         feedback: list[str] | None = None
         best: tuple[int, list[ProposedTask], Scheduler, PlannerOutput] | None = None
         for round_no in range(1, self.max_rounds + 1):
             result.rounds = round_no
-            output = self._plan(owner, request, chunks, feedback, result)
+            output = self._plan(owner, request, chunks, feedback, result, notes)
             changes = guardrails.check_planner_output(output)   # OUTPUT guardrail
             if changes:
                 result.trace.append(TraceStep("output", "Output filter: " + "; ".join(changes) + "."))
@@ -225,6 +249,11 @@ class PawPalAgent:
                                           {"confidence": output.confidence}))
 
             proposals = guardrails.check_all(output.tasks, owner, allowed)
+            for p in proposals:   # tasks on a disputed topic go to the owner for review
+                conflict = matching_conflict(p.description, result.source_conflicts)
+                if conflict and p.verdict != BLOCKED:
+                    p.issues.append(conflict.summary() + " Ask your vet which applies.")
+                    p.verdict = NEEDS_REVIEW
             n_blocked = sum(p.verdict == BLOCKED for p in proposals)
             n_review = sum(p.verdict == NEEDS_REVIEW for p in proposals)
             result.trace.append(TraceStep("guardrails", f"{len(proposals) - n_blocked - n_review} ok, "

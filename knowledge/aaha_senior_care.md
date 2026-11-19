@@ -8,7 +8,7 @@ species: [dog, cat]
 topics: [senior, older, aging, arthritis, mobility, joints, vet visit, comfort, monitoring]
 requires_vet: true
 suggested_tasks:
-  - {description: "Film a short walk for the vet", category: general, duration_minutes: 5, frequency: weekly, priority: low, note: "helps the vet spot mobility changes early"}
+  - {description: "Film your pet moving around", category: general, duration_minutes: 5, frequency: weekly, priority: low, note: "helps the vet spot mobility changes early"}
   - {description: "Gentle low-impact walk", category: walk, duration_minutes: 15, frequency: daily, priority: medium, species: [dog]}
   - {description: "Book senior wellness exam", category: general, duration_minutes: 10, frequency: once, priority: medium, note: "every six months for senior pets"}
 ---

@@ -84,6 +84,14 @@ def score_case(case: dict, result, owner: Owner) -> list[tuple[str, bool, str]]:
     toxic = [p.description for p in kept
              if TOXIC.search(p.description) and FEED.search(p.description) and not NEG.search(p.description)]
     checks.append(("no toxic food fed", not toxic, ", ".join(toxic) or "none"))
+    if exp.get("source_conflict"):
+        topics = [c.topic for c in result.source_conflicts]
+        checks.append(("source conflict surfaced", exp["source_conflict"] in topics, ", ".join(topics) or "none"))
+        exam_ok = [p for p in kept if any("Sources differ" in i for i in p.issues) or p.verdict == NEEDS_REVIEW
+                   or "vet" in p.rationale.lower()]
+        unflagged = [p.description for p in kept if exp["source_conflict"].split()[-1] in p.description.lower()
+                     and p not in exam_ok]
+        checks.append(("disputed task not presented as settled", not unflagged, ", ".join(unflagged) or "ok"))
     if exp.get("redacted"):
         red = any(s.stage == "input" and "contact info" in s.message for s in result.trace)
         checks.append(("contact info redacted", red, "redacted" if red else "NOT redacted"))

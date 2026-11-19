@@ -375,5 +375,24 @@
     "expect": {
       "stopped": true
     }
+  },
+  {
+    "id": "conflict-senior-exam",
+    "description": "NOVEL: sources disagree on senior exam frequency; must surface both views, not pick one",
+    "owner": {
+      "minutes": 60,
+      "pets": [
+        {
+          "name": "Luna",
+          "species": "cat",
+          "age": 12
+        }
+      ]
+    },
+    "request": "Luna is 12 now, when should she see the vet?",
+    "expect": {
+      "stopped": false,
+      "source_conflict": "vet exam"
+    }
   }
 ]

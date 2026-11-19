@@ -365,3 +365,62 @@ def test_ai_check_skipped_when_regex_already_stopped_or_no_request():
     agent.run(make_owner(), "Mochi ate chocolate")
     agent.run(make_owner(), "")
     assert check.calls == 0
+
+
+# --- Source-conflict detection ----------------------------------------------------------
+
+from pawpal_ai.conflicts import extract_claims, find_conflicts  # noqa: E402
+from pawpal_ai.retriever import Chunk, Document  # noqa: E402
+
+
+def _chunk(cid, title, text, species=("dog", "cat")):
+    doc = Document(id=cid, title=title, source="test", species=list(species), topics=[], body=text)
+    return Chunk(id=f"{cid}#x", doc=doc, heading="x", text=text)
+
+
+def test_conflict_found_between_sources():
+    a = _chunk("a", "Source A", "Take your pet for a vet exam every 6 months.")
+    b = _chunk("b", "Source B", "A vet exam at least once a year is enough for adults.")
+    conflicts = find_conflicts([a, b])
+    assert len(conflicts) == 1 and conflicts[0].topic == "vet exam"
+    assert "every 6 months" in conflicts[0].summary() and "once a year" in conflicts[0].summary()
+
+
+def test_overlapping_ranges_are_not_a_conflict():
+    a = _chunk("a", "A", "Many pets need professional cleanings every 6-12 months.")
+    b = _chunk("b", "B", "Professional cleanings at least once a year for most pets.")
+    assert find_conflicts([a, b]) == []
+
+
+def test_different_life_stages_are_not_a_conflict():
+    a = _chunk("a", "Puppy guide", "Puppies need a fecal exam every 2-4 weeks.")
+    b = _chunk("b", "Adult guide", "Adults need a fecal exam at least once a year.")
+    assert find_conflicts([a, b]) == []
+
+
+def test_medicine_frequency_is_not_a_test_frequency():
+    a = _chunk("a", "A", "Give a monthly heartworm preventive, plus an annual heartworm blood test.")
+    claims = extract_claims([a])
+    assert [(c.topic, c.phrase) for c in claims] == [("heartworm test", "annual")]
+
+
+def test_library_cross_check_finds_the_other_side():
+    a = _chunk("a", "Senior guide", "Senior pets need a vet exam every six months.")
+    b = _chunk("b", "Basics", "A vet exam at least once a year.")
+    assert find_conflicts([a]) == []
+    assert len(find_conflicts([a], library=[a, b])) == 1
+
+
+def test_real_knowledge_base_conflict_flags_exam_task_for_review():
+    owner = Owner("Jordan", available_minutes=60)
+    owner.add_pet(Pet("Luna", "cat", age=12))
+    result = PawPalAgent(planner=OfflinePlanner(), retriever=RETRIEVER).run(owner, "when should she see the vet?")
+    assert [c.topic for c in result.source_conflicts] == ["vet exam"]
+    exam = [p for p in result.proposals if "exam" in p.description.lower() and p.verdict != BLOCKED]
+    assert exam and all(p.verdict == NEEDS_REVIEW for p in exam)
+
+
+def test_no_conflict_for_routine_adult_dog():
+    owner = Owner("Jordan", available_minutes=60)
+    owner.add_pet(Pet("Mochi", "dog", age=3))
+    assert PawPalAgent(planner=OfflinePlanner(), retriever=RETRIEVER).run(owner, "busy day").source_conflicts == []
