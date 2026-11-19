@@ -67,9 +67,45 @@ BLOCKED_TERMS = [
     "ipecac", "hydrogen peroxide", "peroxide", "aspirin", "tylenol", "acetaminophen",
     "ibuprofen", "advil", "naproxen", "pepto", "bismuth", "kaopectate",
     "benadryl", "diphenhydramine", "human toothpaste", "induce vomiting",
+    # Added after the AI red team (round 1) slipped brand names and products through:
+    "aleve", "motrin", "excedrin", "midol", "imodium", "loperamide", "sudafed", "pseudoephedrine",
+    "phenylephrine", "nyquil", "dayquil", "zyrtec", "claritin", "melatonin", "xylitol", "birch sugar",
+    "essential oil", "tea tree", "eucalyptus", "peppermint oil", "pine-sol", "pine sol", "permethrin",
+    "motor oil", "kerosene", "turpentine", "horse dewormer", "ivermectin", "head & shoulders",
+    "human shampoo", "dish soap", "bleach",
 ]
+# Unsafe products, remedies and activities that contain no drug word. Each is
+# (pattern, reason). Also added after the AI red team; see evidence/redteam_*.md.
+UNSAFE_PATTERNS = [
+    (r"\btoothpaste\b", r"\b(pet|dog|cat|enzymatic|veterinary|vet)[- ]?(safe )?toothpaste\b|\bnever\b|\bnot\b",
+     "human toothpaste can contain xylitol and fluoride"),
+    (r"\b(salt|salty) ?(water|dissolved)|\bdissolved salt\b|\btablespoon of salt\b", None, "salt water is a dangerous home remedy"),
+    (r"\b(match|lighter|flame)\b.{0,40}\btick|\btick.{0,40}\b(match|lighter|flame)\b", None, "burning ticks injures the pet"),
+    (r"\bsunscreen\b.{0,40}\bzinc\b|\bzinc\b.{0,40}\bsunscreen\b|\bzinc[- ]oxide\b", None, "zinc oxide is toxic if licked"),
+    (r"\b(advantix|k9 advantix|dog flea (treatment|product|drops))\b", None, "dog flea products can poison cats; the vet chooses products"),
+    (r"\b(wait|waits|waiting|stay|stays|left|leave)\b.{0,30}\b(in|inside) the (car|truck|vehicle)\b|\bwindows? cracked\b",
+     None, "a parked car can overheat in minutes"),
+    (r"\b(asphalt|pavement|blacktop|hot sand)\b.{0,60}\b(noon|midday|july|august|summer|heat|hot)\b|"
+     r"\b(noon|midday|july|august)\b.{0,60}\b(asphalt|pavement|blacktop)\b", None, "hot pavement burns paws and risks heat stroke"),
+    (r"\b(pickup|truck) bed\b|\bride loose\b", None, "riding loose in a truck bed risks falls"),
+    (r"\b(green|scummy|algae|stagnant)\b.{0,25}\b(pond|lake|water)\b|\b(pond|lake)\b.{0,25}\b(scum|algae)\b",
+     None, "blue-green algae can be fatal"),
+    (r"\bshave\w*\b.{0,40}\b(husky|malamute|samoyed|double[- ]coat\w*|to the skin)\b", None, "shaving a double coat removes heat protection"),
+    (r"\b(hair ties|rubber bands|string toy|yarn|thread)\b.{0,60}\b(while|alone|unsupervised|at work)\b", None,
+     "strings and hair ties can cause intestinal blockages if swallowed unsupervised"),
+    (r"\b(cooked|chicken wing|wing|rib|steak)\b.{0,15}\bbones?\b", None, "cooked bones splinter"),
+    (r"\b(double|triple|extra)\b.{0,25}\b(dose|chewables?|tablets?|pills?|carprofen|meds?)\b", None,
+     "changing a dose is the vet's decision"),
+    (r"\b(motor|engine) oil\b|\bused oil\b", None, "oil-based home remedies are toxic"),
+]
+# Doses written in words ("two twenty-five-milligram tabs", "half a pill").
+WORD_DOSE_PATTERN = re.compile(
+    r"\b(one|two|three|four|half|a half|quarter|a couple of|a)\s+(\w+[- ])?(tablets?|tabs?|pills?|caplets?|chewables?|"
+    r"capsules?|milligrams?|ml|teaspoons?|tablespoons?|drops?|doses?)\b|\bmilligrams?\b", re.I)
 # Toxic foods: blocked when a task would feed them, e.g. "give chocolate treat".
-TOXIC_FOODS = ["chocolate", "grape", "raisin", "xylitol", "onion", "garlic", "antifreeze"]
+TOXIC_FOODS = ["chocolate", "grape", "raisin", "xylitol", "onion", "garlic", "antifreeze",
+               "sultana", "currant", "cacao", "cocoa", "macadamia", "coffee", "alcohol", "beer", "wine",
+               "chive", "leek", "avocado", "gravy"]
 DOSE_PATTERN = re.compile(r"\b\d+(\.\d+)?\s?(mg|mcg|ml|cc|g|tablets?|pills?|capsules?|tsp|tbsp|units?)\b", re.I)
 MEDICAL_PATTERN = re.compile(
     r"\b(med(s|ication|icine)?|pill|dose|dosage|prescri\w*|antibiotic|preventive|heartworm|"
@@ -99,6 +135,13 @@ INJECTION_PATTERNS = [
     r"\bpretend (to be|you)\b", r"\bnew instructions\b", r"\bdo anything now\b",
     r"\boverride (the |your )?(rules|guardrails|safety)",
     r"</?(system|assistant|instructions|sources|request|pets)>",
+    # Added after the AI red team (round 1):
+    r"\b(system|admin|developer|debug|maintenance|test) (notice|mode|configuration|override)\b",
+    r"\bsafety (module|filter|rules?|guidelines?|restrictions?|override)\b.{0,60}\b(off|disabled?|maintenance|deprecated|removed|unfiltered|override|supersede)",
+    r"\b(unfiltered|without (any )?(filters?|restrictions?)|no restrictions|sin restricciones|sans restrictions)\b",
+    r"\b(supersedes?|overrides?) (the )?(app'?s )?(default )?(rules|restrictions|policy|guidelines)\b",
+    r"\bi (authorize|permit|allow) you to\b", r"\bcode ?word\b", r"\b(policy|rule) .{0,40}\b(removed|deprecated|updated|no longer applies)\b",
+    r"[\"']?safety_override[\"']?\s*:", r"\b(olvida|ignora) (todas )?(tus|las) reglas\b", r"\boublie (toutes )?(tes|les) r[eè]gles\b",
 ]
 EMAIL_PATTERN = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
 PHONE_PATTERN = re.compile(r"(?<!\d)(\+?\d[\d\s().-]{8,}\d)(?!\d)")
@@ -267,9 +310,13 @@ def check_task(
             if t in desc or _affirmative_mention(t, task.rationale.lower())]
     if hits:
         flag(BLOCKED, f"unsafe: mentions {', '.join(hits)} (vets only)")
-    if DOSE_PATTERN.search(text):
+    if DOSE_PATTERN.search(text) or (WORD_DOSE_PATTERN.search(desc) and MEDICAL_PATTERN.search(text + " pill")):
         flag(BLOCKED, "unsafe: contains a dose or amount; dosing is the vet's decision")
-    feeding_words = re.search(r"\b(give|feed|treat|snack|offer)\b", text)
+    for pattern, exempt, reason in UNSAFE_PATTERNS:
+        if re.search(pattern, desc) and not (exempt and re.search(exempt, desc)):
+            flag(BLOCKED, f"unsafe: {reason}")
+    feeding_words = re.search(r"\b(give|feed|treat|treats|snack|offer|drizzle|sprinkle|stuff|top|topper|"
+                              r"mix|reward|rewards|serve|add|chew)\b", text)
     toxic = [f for f in TOXIC_FOODS if re.search(rf"\b{f}s?\b", text)]
     if toxic and feeding_words and not re.search(r"\b(avoid|never|don'?t|keep away|remove|store)\b", text):
         flag(BLOCKED, f"unsafe: would feed a toxic item ({', '.join(toxic)})")

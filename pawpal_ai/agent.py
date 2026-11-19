@@ -37,7 +37,7 @@ from .planner import OfflinePlanner, Planner, default_planner
 from .conflicts import Conflict, find_conflicts, matching_conflict
 from .health import Alert, HealthLog, analyze
 from .retriever import Chunk, Retriever
-from .safety_check import default_emergency_check
+from .safety_check import default_emergency_check, default_task_reviewer
 
 log = logging.getLogger(__name__)
 
@@ -96,13 +96,17 @@ class AgentResult:
 
 class PawPalAgent:
     def __init__(self, planner: Planner | None = None, retriever: Retriever | None = None,
-                 max_rounds: int = 3, chunks_per_pet: int = 6, emergency_check="auto"):
+                 max_rounds: int = 3, chunks_per_pet: int = 6, emergency_check="auto", task_reviewer="auto"):
         self.planner = planner or default_planner()
         # INPUT guardrail, layer 2: an AI emergency classifier behind the regex.
         # "auto" = use it whenever Claude is the planner (an API key is set).
         if emergency_check == "auto":
             emergency_check = default_emergency_check() if getattr(self.planner, "source", "") == "claude" else None
         self.emergency_check = emergency_check
+        # OUTPUT guardrail, layer 2: an AI second opinion on every proposed task.
+        if task_reviewer == "auto":
+            task_reviewer = default_task_reviewer() if getattr(self.planner, "source", "") == "claude" else None
+        self.task_reviewer = task_reviewer
         self.retriever = retriever or Retriever()
         # CODE guardrail: never more than HARD_MAX_ROUNDS planner calls per run,
         # whatever the caller asks for, so a loop can't run up API costs.
@@ -194,6 +198,13 @@ class PawPalAgent:
         if self.emergency_check is not None and request.strip():
             pets = "; ".join(f"{p.name}: {p.species}, age {p.age}. {p.notes}" for p in owner.pets)
             verdict = self.emergency_check.check(request, pets)
+            if verdict.manipulation:
+                result.stopped = True
+                result.stop_reason = ("That request looks like an attempt to change WhiskerWise's safety rules, "
+                                      "so it wasn't sent to the planner. Describe your pets' day instead.")
+                result.trace.append(TraceStep("stop", result.stop_reason, {"layer": "ai", "manipulation": True}))
+                log.warning("Agent stopped by AI manipulation check: %s", verdict.reason)
+                return result
             if verdict.verdict == "emergency":
                 result.stopped = True
                 result.stop_reason = (f"This may be an emergency ({verdict.reason.rstrip('.')}). WhiskerWise is a daily "
@@ -270,6 +281,14 @@ class PawPalAgent:
                                           {"confidence": output.confidence}))
 
             proposals = guardrails.check_all(output.tasks, owner, allowed)
+            if self.task_reviewer is not None:
+                pending = [p for p in proposals if p.verdict != BLOCKED]
+                species = {pet.name: f"{pet.species}, age {pet.age}" for pet in owner.pets}
+                flagged = self.task_reviewer.review([(f"{p.pet_name}: {species.get(p.pet_name, '?')}", p.description,
+                                                      p.rationale) for p in pending])
+                for i, reason in flagged.items():
+                    pending[i].verdict = BLOCKED
+                    pending[i].issues.insert(0, f"unsafe (AI safety review): {reason}")
             for p in proposals:   # tasks on a disputed topic go to the owner for review
                 conflict = matching_conflict(p.description, result.source_conflicts)
                 if conflict and p.verdict != BLOCKED:
