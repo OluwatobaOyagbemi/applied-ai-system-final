@@ -8,10 +8,10 @@ from pawpal_system import Owner, Pet, Scheduler, Task
 load_dotenv()
 setup_logging()
 
-st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
+st.set_page_config(page_title="WhiskerWise", page_icon="🐾", layout="centered")
 
-st.title("🐾 PawPal+")
-st.caption("Plan your pets' care tasks for the day based on your time, priorities, and preferred times.")
+st.title("🐾 WhiskerWise")
+st.caption("AI pet-care planning grounded in vet guidance. You approve every task. (Built on PawPal+.)")
 
 # --- App memory -------------------------------------------------------------
 # Streamlit reruns this whole script on every click. Store the Owner in

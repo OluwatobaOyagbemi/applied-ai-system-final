@@ -1,8 +1,10 @@
-# 🐾 PawPal+ AI
+# 🐾 WhiskerWise
+
+*Formerly PawPal+ AI. Built on my Module 2 project, PawPal+.*
 
 **An AI pet-care planner that looks up vetted guidelines before it suggests anything, checks its own work, and never changes your pets' schedule without your approval.**
 
-PawPal+ AI builds a daily care plan for one or more pets. It retrieves relevant pet-care guidance from a local knowledge base, asks Claude to propose tasks that cite that guidance, runs every proposal through deterministic safety guardrails, dry-runs the schedule, and revises when something doesn't fit. The owner then approves the tasks they want. Pet care is an area where confident-sounding AI advice can hurt an animal, so the project is built around one idea: **the model suggests, the code verifies, and the human decides.**
+WhiskerWise builds a daily care plan for one or more pets. It retrieves relevant pet-care guidance from a local knowledge base, asks Claude to propose tasks that cite that guidance, runs every proposal through deterministic safety guardrails, dry-runs the schedule, and revises when something doesn't fit. The owner then approves the tasks they want. Pet care is an area where confident-sounding AI advice can hurt an animal, so the project is built around one idea: **the model suggests, the code verifies, and the human decides.**
 
 ---
 
@@ -10,7 +12,7 @@ PawPal+ AI builds a daily care plan for one or more pets. It retrieves relevant 
 
 This project extends **PawPal+**, my Module 2 project. PawPal+ was a Streamlit app that helped a busy pet owner plan a day of care: you entered your pets, their tasks and the minutes you had, and a rule-based `Scheduler` picked the highest-priority tasks that fit, placed them at start times, warned about time conflicts, handled daily and weekly recurrence, and explained each decision. It had no AI. Every task had to be typed in by hand. The original README is preserved in [MODULE2.md](MODULE2.md).
 
-**What's new:** an AI layer (`pawpal_ai/`) that suggests the tasks for you, grounded in real veterinary guidance, with guardrails, human-in-the-loop review, logging, and a reliability evaluation. The Module 2 scheduler is still the engine. The AI feeds it, and the agent also uses it to check its own plans.
+**What's new in WhiskerWise:** an AI layer (`pawpal_ai/`) that suggests the tasks for you, grounded in real veterinary guidance, with guardrails, human-in-the-loop review, logging, and a reliability evaluation. The Module 2 scheduler is still the engine. The AI feeds it, and the agent also uses it to check its own plans.
 
 ---
 
@@ -128,7 +130,7 @@ The first draft went over 90 minutes, so the agent revised it and dropped lower-
 **Input:** `"Mochi ate chocolate an hour ago"`
 
 ```
-  [stop      ] This sounds like it could be an emergency. PawPal+ is a daily planner, not medical
+  [stop      ] This sounds like it could be an emergency. WhiskerWise is a daily planner, not medical
                help. Contact your veterinarian or an emergency animal clinic now. In the US, the
                ASPCA Animal Poison Control line is (888) 426-4435.
 ```
@@ -283,7 +285,7 @@ It also taught me that sources matter as much as code. The first veterinary broc
 ## 💼 Portfolio
 
 - **Code:** https://github.com/OluwatobaOyagbemi/applied-ai-system-final
-- **What this project says about me as an AI engineer:** I don't treat the model as the product. I treat it as one component that has to earn trust. In PawPal+ AI, Claude suggests the plan, but retrieval decides what it's allowed to know, code-level guardrails decide what's allowed through, the existing scheduler checks whether the plan actually works, and a person makes the final call. I care about evidence: every claim in this README is backed by a test, an evaluation run or a committed log, and where a result was weaker than it looked (like the two offline scenarios that passed trivially), I said so instead of rounding up. I also learned that responsible AI starts before the code. Choosing and cleaning the sources mattered as much as any prompt.
+- **What this project says about me as an AI engineer:** I don't treat the model as the product. I treat it as one component that has to earn trust. In WhiskerWise, Claude suggests the plan, but retrieval decides what it's allowed to know, code-level guardrails decide what's allowed through, the existing scheduler checks whether the plan actually works, and a person makes the final call. I care about evidence: every claim in this README is backed by a test, an evaluation run or a committed log, and where a result was weaker than it looked (like the two offline scenarios that passed trivially), I said so instead of rounding up. I also learned that responsible AI starts before the code. Choosing and cleaning the sources mattered as much as any prompt.
 
 ---
 
@@ -311,4 +313,4 @@ model_card.md           Responsible-AI reflection, limitations, evaluation
 MODULE2.md              Original Module 2 README
 ```
 
-*PawPal+ gives general pet-care reminders and is not veterinary advice. Always follow your veterinarian's instructions.*
+*WhiskerWise gives general pet-care reminders and is not veterinary advice. Always follow your veterinarian's instructions.*

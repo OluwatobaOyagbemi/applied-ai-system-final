@@ -41,9 +41,9 @@ $ python -m pawpal_ai --offline --approve "Mochi ate chocolate an hour ago"
 Request: 'Mochi ate chocolate an hour ago'
 Pets: Mochi (dog, 2), Luna (cat, 11) · 90 min from 07:30
 
-  [stop      ] This sounds like it could be an emergency. PawPal+ is a daily planner, not medical help. Contact your veterinarian or an emergency animal clinic now. In the US, the ASPCA Animal Poison Control line is (888) 426-4435.
+  [stop      ] This sounds like it could be an emergency. WhiskerWise is a daily planner, not medical help. Contact your veterinarian or an emergency animal clinic now. In the US, the ASPCA Animal Poison Control line is (888) 426-4435.
 
-⛔ This sounds like it could be an emergency. PawPal+ is a daily planner, not medical help. Contact your veterinarian or an emergency animal clinic now. In the US, the ASPCA Animal Poison Control line is (888) 426-4435.
+⛔ This sounds like it could be an emergency. WhiskerWise is a daily planner, not medical help. Contact your veterinarian or an emergency animal clinic now. In the US, the ASPCA Animal Poison Control line is (888) 426-4435.
 
 --------------------------------------------------------------------------------
 

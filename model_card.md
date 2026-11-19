@@ -1,4 +1,6 @@
-# Model Card: PawPal+ AI Care Planner
+# Model Card: WhiskerWise AI Care Planner
+
+*WhiskerWise was previously called PawPal+ AI. It extends my Module 2 project, PawPal+. The code package is still named `pawpal_ai`.*
 
 ## 1. System overview
 

@@ -80,7 +80,7 @@ def check_request(text: str) -> InputCheck:
             log.warning("Emergency language detected in request: %r", pattern)
             return InputCheck(
                 False,
-                "This sounds like it could be an emergency. PawPal+ is a daily planner, "
+                "This sounds like it could be an emergency. WhiskerWise is a daily planner, "
                 "not medical help. Contact your veterinarian or an emergency animal clinic "
                 "now. In the US, the ASPCA Animal Poison Control line is (888) 426-4435.",
                 emergency=True,
