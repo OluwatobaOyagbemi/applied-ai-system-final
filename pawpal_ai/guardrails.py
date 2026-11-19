@@ -1,10 +1,24 @@
-"""Guardrails: deterministic checks on owner input and on every task the AI proposes.
+"""Guardrails: deterministic checks in three layers. The LLM is never trusted on its own.
 
-The LLM is never trusted on its own. Before a proposed task can reach the
-schedule it must pass these checks:
+INPUT guardrails (before any AI call)
+  check_request  - empty / oversized text, emergency descriptions (stop and
+                   refer to a vet), prompt-injection attempts (refuse), control
+                   characters and HTML stripped, emails and phone numbers
+                   redacted so they are never sent to the API
+  check_owner    - time budget, pet count, name and notes length, and
+                   injection text hidden in pet notes
 
-  input checks   - empty / oversized requests, and emergency descriptions,
-                   which stop planning and tell the owner to call a vet
+OUTPUT guardrails (on what the planner returns)
+  check_planner_output - task-count cap, confidence clamped to 0-1, links
+                   stripped, planner notes screened for unsafe advice
+  check_task / check_all - every proposed task, as below
+
+CODE guardrails (runtime protections in agent.py / planner.py)
+  hard cap on planning rounds, API timeout and retry limits, a fingerprint
+  check that a run never modifies the owner's data, and apply_approved()
+  re-checking each task at the moment it is approved
+
+Per-task checks in check_task:
   schema         - the values must build a valid pawpal_system.Task
   grounding      - every task must cite at least one retrieved knowledge chunk
   safety         - no drug doses, no specific human drugs, no "induce
@@ -61,20 +75,78 @@ SPECIES_ONLY = {
 }
 
 
+# ============================================================================
+# INPUT guardrails
+# ============================================================================
+
+MAX_PETS = 10
+MAX_NAME_CHARS = 40
+MAX_NOTES_CHARS = 300
+
+# Attempts to override the planner's instructions. The rules are enforced in
+# code anyway, but refusing these keeps the model from being steered at all.
+INJECTION_PATTERNS = [
+    r"\bignore (all |any |the |your )?(previous |prior |above )?(instructions|rules|prompt)",
+    r"\bdisregard (all |any |the |your )?(previous |prior )?(instructions|rules)",
+    r"\b(system|developer) prompt\b", r"\byou are now\b", r"\bact as\b", r"\bjailbreak\b",
+    r"\bpretend (to be|you)\b", r"\bnew instructions\b", r"\bdo anything now\b",
+    r"\boverride (the |your )?(rules|guardrails|safety)",
+    r"</?(system|assistant|instructions|sources|request|pets)>",
+]
+EMAIL_PATTERN = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
+PHONE_PATTERN = re.compile(r"(?<!\d)(\+?\d[\d\s().-]{8,}\d)(?!\d)")
+CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+HTML_TAG = re.compile(r"<[^>]{1,200}>")
+
+
 @dataclass
 class InputCheck:
     ok: bool
     reason: str = ""
     emergency: bool = False
+    cleaned: str = ""          # the sanitized, PII-redacted text to send onward
+    redactions: int = 0
+
+
+def sanitize_text(text: str) -> tuple[str, int]:
+    """Strip control characters and HTML tags, redact emails and phone numbers.
+    Returns (clean text, number of redactions)."""
+    text = CONTROL_CHARS.sub("", text)
+    text = HTML_TAG.sub(" ", text)
+    text, n_email = EMAIL_PATTERN.subn("[email removed]", text)
+    n_phone = 0
+
+    def _phone(m: re.Match) -> str:
+        nonlocal n_phone
+        if sum(ch.isdigit() for ch in m.group(0)) < 10:   # dates, times, small numbers
+            return m.group(0)
+        n_phone += 1
+        return "[phone removed]"
+
+    text = PHONE_PATTERN.sub(_phone, text)
+    return re.sub(r"[ \t]+", " ", text).strip(), n_email + n_phone
+
+
+def _looks_like_injection(text: str) -> str | None:
+    lowered = text.lower()
+    return next((p for p in INJECTION_PATTERNS if re.search(p, lowered)), None)
 
 
 def check_request(text: str) -> InputCheck:
-    """Validate the owner's free-text request before any AI call."""
+    """Validate and sanitize the owner's free-text request before any AI call."""
     if text is None or not text.strip():
         return InputCheck(True, "No extra request; planning from pet profiles only.")
     if len(text) > MAX_REQUEST_CHARS:
         return InputCheck(False, f"Request is too long ({len(text)} characters, max {MAX_REQUEST_CHARS}).")
-    lowered = text.lower()
+    injection = _looks_like_injection(text)
+    if injection:
+        log.warning("Prompt-injection pattern in request: %r", injection)
+        return InputCheck(False, "That request looks like an attempt to change WhiskerWise's instructions, "
+                                 "so it wasn't sent to the AI. Describe your pets' day instead.")
+    cleaned, redactions = sanitize_text(text)
+    if redactions:
+        log.info("Redacted %d piece(s) of contact info from the request", redactions)
+    lowered = cleaned.lower()
     for pattern in EMERGENCY_PATTERNS:
         if re.search(pattern, lowered):
             log.warning("Emergency language detected in request: %r", pattern)
@@ -85,6 +157,25 @@ def check_request(text: str) -> InputCheck:
                 "now. In the US, the ASPCA Animal Poison Control line is (888) 426-4435.",
                 emergency=True,
             )
+    return InputCheck(True, cleaned=cleaned, redactions=redactions)
+
+
+def check_owner(owner: Owner) -> InputCheck:
+    """Validate the structured profile the planner will see."""
+    if not 0 < owner.available_minutes <= 1440:
+        return InputCheck(False, f"Minutes available must be between 1 and 1440 (got {owner.available_minutes}).")
+    if len(owner.pets) > MAX_PETS:
+        return InputCheck(False, f"WhiskerWise plans for up to {MAX_PETS} pets at a time.")
+    for pet in owner.pets:
+        if len(pet.name) > MAX_NAME_CHARS:
+            return InputCheck(False, f"Pet name '{pet.name[:20]}…' is too long (max {MAX_NAME_CHARS} characters).")
+        if len(pet.notes) > MAX_NOTES_CHARS:
+            return InputCheck(False, f"Notes for {pet.name} are too long (max {MAX_NOTES_CHARS} characters).")
+        for field in (pet.name, pet.notes, pet.species):
+            if _looks_like_injection(field):
+                log.warning("Prompt-injection pattern in pet profile for %r", pet.name)
+                return InputCheck(False, f"The profile for {pet.name} contains text that looks like "
+                                         "instructions to the AI. Please edit it.")
     return InputCheck(True)
 
 
@@ -94,6 +185,19 @@ def _norm(text: str) -> str:
 
 _GENERIC = {"daily", "weekly", "morning", "evening", "afternoon", "night", "give", "the", "a", "an",
             "and", "for", "with", "pet", "time", "quick", "short", "long", "check", "session"}
+
+
+_NEGATION = re.compile(r"\b(never|not|no|avoid|don'?t|do not|instead of|rather than|without|unsafe|toxic|dangerous)\b")
+
+
+def _affirmative_mention(term: str, text: str) -> bool:
+    """True if `term` appears in `text` without a negation in the few words
+    before it. 'never use human toothpaste' -> False; 'use human toothpaste' -> True."""
+    for m in re.finditer(re.escape(term), text):
+        window = text[max(0, m.start() - 40):m.start()]
+        if not _NEGATION.search(window):
+            return True
+    return False
 
 
 def _key_words(text: str) -> set[str]:
@@ -147,8 +251,13 @@ def check_task(
             task.citations = [c for c in task.citations if c in allowed_citations]
 
     # --- safety ---
+    # The description is what the owner would do, so any blocked term there
+    # counts. In the rationale, a negated mention ("never use human
+    # toothpaste") is safety advice, not a suggestion, so it is allowed.
     text = f"{task.description} {task.rationale}".lower()
-    hits = [t for t in BLOCKED_TERMS if t in text]
+    desc = task.description.lower()
+    hits = [t for t in BLOCKED_TERMS
+            if t in desc or _affirmative_mention(t, task.rationale.lower())]
     if hits:
         flag(BLOCKED, f"unsafe: mentions {', '.join(hits)} (vets only)")
     if DOSE_PATTERN.search(text):
@@ -186,6 +295,53 @@ def check_task(
     task.verdict, task.issues = verdict, issues
     log.info("Guardrail %s: %s (%s) %s", verdict, task.description, task.pet_name, issues or "")
     return task
+
+
+# ============================================================================
+# OUTPUT guardrails (planner-level; per-task checks are in check_task above)
+# ============================================================================
+
+MAX_PROPOSALS = 25
+URL_PATTERN = re.compile(r"https?://\S+|www\.\S+", re.I)
+
+
+def _unsafe_free_text(text: str) -> list[str]:
+    lowered = text.lower()
+    found = [t for t in BLOCKED_TERMS if _affirmative_mention(t, lowered)]
+    if DOSE_PATTERN.search(lowered):
+        found.append("a dose or amount")
+    return found
+
+
+def check_planner_output(output) -> list[str]:
+    """Screen a PlannerOutput in place before its tasks are checked one by one.
+    Returns a list of what was changed, for the trace."""
+    changes = []
+    if len(output.tasks) > MAX_PROPOSALS:
+        changes.append(f"kept the first {MAX_PROPOSALS} of {len(output.tasks)} proposals")
+        output.tasks = output.tasks[:MAX_PROPOSALS]
+    try:
+        conf = float(output.confidence)
+    except (TypeError, ValueError):
+        conf = 0.0
+    clamped = min(max(conf, 0.0), 1.0)
+    if clamped != conf:
+        changes.append(f"confidence {conf} clamped to {clamped}")
+    output.confidence = clamped
+    for task in output.tasks:
+        if URL_PATTERN.search(task.rationale):
+            task.rationale = URL_PATTERN.sub("[link removed]", task.rationale)
+            changes.append(f"removed a link from '{task.description}'")
+    if URL_PATTERN.search(output.notes):
+        output.notes = URL_PATTERN.sub("[link removed]", output.notes)
+        changes.append("removed a link from the planner notes")
+    unsafe = _unsafe_free_text(output.notes)
+    if unsafe:
+        output.notes = "[Planner notes withheld by the safety filter.]"
+        changes.append(f"withheld planner notes (mentioned {', '.join(unsafe)})")
+    for c in changes:
+        log.warning("Output guardrail: %s", c)
+    return changes
 
 
 def check_all(tasks: list[ProposedTask], owner: Owner, allowed_citations: set[str]) -> list[ProposedTask]:

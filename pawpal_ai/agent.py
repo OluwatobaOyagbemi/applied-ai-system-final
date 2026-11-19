@@ -37,6 +37,16 @@ from .retriever import Chunk, Retriever
 
 log = logging.getLogger(__name__)
 
+HARD_MAX_ROUNDS = 5
+
+
+def fingerprint(owner: Owner) -> tuple:
+    """A snapshot of everything a run must not change (CODE guardrail)."""
+    return (owner.name, owner.available_minutes, owner.day_start,
+            tuple((p.name, p.species, p.age, p.notes,
+                   tuple((t.description, t.duration_minutes, t.priority, t.frequency, t.time,
+                          t.completed, t.due_date) for t in p.tasks)) for p in owner.pets))
+
 
 @dataclass
 class AgentResult:
@@ -82,7 +92,9 @@ class PawPalAgent:
                  max_rounds: int = 3, chunks_per_pet: int = 6):
         self.planner = planner or default_planner()
         self.retriever = retriever or Retriever()
-        self.max_rounds = max_rounds
+        # CODE guardrail: never more than HARD_MAX_ROUNDS planner calls per run,
+        # whatever the caller asks for, so a loop can't run up API costs.
+        self.max_rounds = max(1, min(max_rounds, HARD_MAX_ROUNDS))
         self.chunks_per_pet = chunks_per_pet
         self.fallback = OfflinePlanner()
 
@@ -130,14 +142,36 @@ class PawPalAgent:
     # --- main loop -------------------------------------------------------------
 
     def run(self, owner: Owner, request: str = "") -> AgentResult:
+        """Plan for `owner`. CODE guardrail: the owner's data is fingerprinted
+        before and after, and a run that changed it is refused."""
+        before = fingerprint(owner)
+        result = self._run(owner, request or "")
+        if fingerprint(owner) != before:
+            log.error("Agent run modified the owner's data; result discarded")
+            return AgentResult(request=request, stopped=True,
+                               stop_reason="Internal safety check failed: planning changed your data, so the result was discarded.",
+                               trace=result.trace + [TraceStep("stop", "Owner data changed during planning; result discarded.")])
+        return result
+
+    def _run(self, owner: Owner, request: str) -> AgentResult:
         result = AgentResult(request=request)
         log.info("Agent run started: %d pet(s), %d min, request=%r", len(owner.pets), owner.available_minutes, request)
 
+        # INPUT guardrails
         check = guardrails.check_request(request)
         if not check.ok:
             result.stopped, result.stop_reason = True, check.reason
             result.trace.append(TraceStep("stop", check.reason, {"emergency": check.emergency}))
             log.warning("Agent stopped at input guardrail: %s", check.reason)
+            return result
+        if check.redactions:
+            result.trace.append(TraceStep("input", f"Removed {check.redactions} piece(s) of contact info before planning."))
+        request = check.cleaned
+        profile = guardrails.check_owner(owner)
+        if not profile.ok:
+            result.stopped, result.stop_reason = True, profile.reason
+            result.trace.append(TraceStep("stop", profile.reason))
+            log.warning("Agent stopped at profile guardrail: %s", profile.reason)
             return result
         if not owner.pets:
             result.stopped, result.stop_reason = True, "Add at least one pet before asking the AI to plan."
@@ -159,6 +193,9 @@ class PawPalAgent:
         for round_no in range(1, self.max_rounds + 1):
             result.rounds = round_no
             output = self._plan(owner, request, chunks, feedback, result)
+            changes = guardrails.check_planner_output(output)   # OUTPUT guardrail
+            if changes:
+                result.trace.append(TraceStep("output", "Output filter: " + "; ".join(changes) + "."))
             result.trace.append(TraceStep("plan", f"Round {round_no}: {output.source} planner proposed {len(output.tasks)} task(s).",
                                           {"confidence": output.confidence}))
 
@@ -166,7 +203,9 @@ class PawPalAgent:
             n_blocked = sum(p.verdict == BLOCKED for p in proposals)
             n_review = sum(p.verdict == NEEDS_REVIEW for p in proposals)
             result.trace.append(TraceStep("guardrails", f"{len(proposals) - n_blocked - n_review} ok, "
-                                          f"{n_review} need your review, {n_blocked} blocked."))
+                                          f"{n_review} need your review, {n_blocked} blocked.",
+                                          {"blocked": [f"{p.description} ({p.pet_name}): {p.issues[0]}"
+                                                       for p in proposals if p.verdict == BLOCKED]}))
 
             scheduler = self.simulate(owner, proposals)
             skipped = [(t, r) for t, r in scheduler.skipped]
@@ -209,10 +248,19 @@ def apply_approved(owner: Owner, proposals: list[ProposedTask], approved: list[i
     """Add the owner-approved proposals (by index) to the real pets.
     Blocked proposals are refused even if their index is passed in."""
     added = []
-    for i in approved:
+    for i in sorted(set(approved)):
+        if not 0 <= i < len(proposals):
+            log.warning("Ignored out-of-range approval index %r", i)
+            continue
         p = proposals[i]
         if p.verdict == BLOCKED:
             log.warning("Refused to apply blocked proposal %r", p.description)
+            continue
+        # CODE guardrail: re-check at approval time, against the owner as it is
+        # now, in case the proposal or the pets changed since planning.
+        recheck = guardrails.check_task(copy.deepcopy(p), owner, set(p.citations), already_proposed=None)
+        if recheck.verdict == BLOCKED:
+            log.warning("Refused %r at approval time: %s", p.description, recheck.issues)
             continue
         pet = owner.get_pet(p.pet_name)
         if pet is None:

@@ -155,7 +155,9 @@ class ClaudePlanner:
 
         self.anthropic = anthropic
         self.model = model or os.getenv("PAWPAL_MODEL", DEFAULT_MODEL)
-        self.client = client or anthropic.Anthropic()
+        # CODE guardrail: bounded wait and retries per call, so a hung or
+        # failing API degrades to the offline planner instead of freezing the app.
+        self.client = client or anthropic.Anthropic(timeout=90.0, max_retries=2)
         self.effort = effort
 
     def _build_messages(self, owner: Owner, request: str, chunks: list[Chunk], feedback: list[str] | None) -> list[dict]:

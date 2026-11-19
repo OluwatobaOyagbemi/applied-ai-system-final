@@ -98,7 +98,7 @@
   /* ---------- demo player ---------- */
   const stories = $("#stories"), chat = $("#chat-body"), props = $("#proposals"), meters = $("#meters"), foot = $("#review-foot"), timeline = $("#timeline");
   $("#demo-mode").textContent = D.mode === "live" ? "Claude" : "offline";
-  const STAGE_LABEL = { retrieve: "🔎 fetch", plan: "🧠 plan", guardrails: "🛡️ check", schedule: "🗓️ dry-run", revise: "↺ revise", done: "✅ ready", stop: "🛑 stop" };
+  const STAGE_LABEL = { input: "🧹 input", output: "🧾 output", retrieve: "🔎 fetch", plan: "🧠 plan", guardrails: "🛡️ check", schedule: "🗓️ dry-run", revise: "↺ revise", done: "✅ ready", stop: "🛑 stop" };
   const petIcon = (sc, name) => { const p = sc.pets.find((x) => x.name === name); return p && p.species === "cat" ? "🐱" : "🐶"; };
   const scenarios = [...D.scenarios, { key: "unsafe", label: "🧪 Unsafe AI", sub: "red team", synthetic: true }];
   let runId = 0;
