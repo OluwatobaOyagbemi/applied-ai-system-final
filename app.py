@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from pawpal_ai import OfflinePlanner, PawPalAgent, apply_approved, default_planner, setup_logging
 from pawpal_ai.models import BLOCKED, NEEDS_REVIEW
 from pawpal_system import Owner, Pet, Scheduler, Task
+import ui_theme as ui
 
 load_dotenv()
 # On Streamlit Community Cloud the key lives in the app's Secrets, never in the repo.
@@ -35,8 +36,8 @@ SESSION_AI_LIMIT = int(os.getenv("WW_SESSION_AI_LIMIT", "5"))
 
 st.set_page_config(page_title="WhiskerWise", page_icon="🐾", layout="centered")
 
-st.title("🐾 WhiskerWise")
-st.caption("AI pet-care planning grounded in vet guidance. You approve every task. (Built on PawPal+.)")
+ui.apply_theme()
+ui.hero()
 
 # --- App memory -------------------------------------------------------------
 # Streamlit reruns this whole script on every click. Store the Owner in
@@ -64,7 +65,7 @@ if not owner.pets:
         st.rerun()
 
 # --- Owner ------------------------------------------------------------------
-st.subheader("Owner")
+ui.section(1, "Your day", "Who's planning, how much time you have, and when the day starts.")
 col1, col2, col3 = st.columns(3)
 with col1:
     owner.name = st.text_input("Owner name", value=owner.name)
@@ -77,10 +78,9 @@ with col3:
     day_start = st.time_input("Day starts at", value=owner.day_start, step=900)
     owner.day_start = day_start.strftime("%H:%M")
 
-st.divider()
 
 # --- Pets -------------------------------------------------------------------
-st.subheader("Pets")
+ui.section(2, "Your pets", "Add each pet. Notes help the AI, e.g. “senior, a little stiff”.")
 with st.form("add_pet", clear_on_submit=True):
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -109,12 +109,11 @@ if owner.pets:
 else:
     st.info("No pets yet. Add one above.")
 
-st.divider()
 
 # --- AI Care Planner ----------------------------------------------------------
 # Retrieve guidelines -> Claude proposes cited tasks -> guardrails check them ->
 # dry-run schedule -> revise. Nothing is added until the owner approves it here.
-st.subheader("🤖 AI Care Planner")
+ui.section(3, "Ask the AI", "Retrieves vet guidance, drafts cited tasks, checks them, and waits for your approval.")
 
 
 @st.cache_resource
@@ -237,10 +236,9 @@ else:
                 del st.session_state.ai_result
                 st.rerun()
 
-st.divider()
 
 # --- Tasks ------------------------------------------------------------------
-st.subheader("Tasks")
+ui.section(4, "Tasks", "Approved AI suggestions and your own tasks. Mark done, filter, sort.")
 if not owner.pets:
     st.caption("Add a pet before adding tasks.")
 else:
@@ -350,10 +348,9 @@ else:
             + "\n".join(f"- {c}" for c in conflicts)
         )
 
-st.divider()
 
 # --- Schedule ---------------------------------------------------------------
-st.subheader("Today's Schedule")
+ui.section(5, "Today's schedule", "Fits the highest-priority tasks into your minutes, with a reason for each.")
 if st.button("Generate schedule", type="primary"):
     scheduler = Scheduler(owner)
     plan = scheduler.generate_plan()
@@ -384,3 +381,5 @@ if st.button("Generate schedule", type="primary"):
             "Add more time or lower another task's priority to fit them in.\n\n"
             + "\n".join(f"- {t.description} ({t.pet_name}): {r}" for t, r in scheduler.skipped)
         )
+
+ui.footer()

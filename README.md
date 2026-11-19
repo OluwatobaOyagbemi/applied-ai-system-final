@@ -362,7 +362,8 @@ It also taught me that sources matter as much as code. The first veterinary broc
 ## 📁 Project structure
 
 ```
-app.py                  Streamlit UI (Module 2 planner + new AI Care Planner section)
+app.py                  Streamlit UI: Module 2 planner + the AI Care Planner
+ui_theme.py             App styling that matches the landing page (fonts, gradient, cards)
 pawpal_system.py        Module 2 scheduling engine (Owner, Pet, Task, Scheduler)
 pawpal_ai/
   agent.py              Orchestration loop, AgentResult, apply_approved()
