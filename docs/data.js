@@ -49,19 +49,23 @@ window.WW_DATA = {
     },
     {
      "stage": "retrieve",
-     "message": "Retrieved 10 guideline excerpts."
+     "message": "Retrieved 13 guideline excerpts."
+    },
+    {
+     "stage": "conflicts",
+     "message": "1 source conflict(s): Sources differ on vet exam: Senior dog and cat care says every six months (for senior pets); Cat care basics (litter, water, grooming, vet visits) says at least once a year."
     },
     {
      "stage": "plan",
-     "message": "Round 1: claude planner proposed 4 task(s)."
+     "message": "Round 1: claude planner proposed 3 task(s)."
     },
     {
      "stage": "guardrails",
-     "message": "4 ok, 0 need your review, 0 blocked."
+     "message": "3 ok, 0 need your review, 0 blocked."
     },
     {
      "stage": "schedule",
-     "message": "Dry run: 5 scheduled, 0 skipped, 0 conflict(s)."
+     "message": "Dry run: 4 scheduled, 0 skipped, 0 conflict(s)."
     },
     {
      "stage": "done",
@@ -69,22 +73,25 @@ window.WW_DATA = {
     }
    ],
    "retrieved": [
-    "cornell-cat-feeding#by-life-stage",
     "pvc-daily-routine#overview",
-    "aaha-senior-care#mobility-and-comfort",
-    "aaha-senior-care#who-counts-as-senior",
+    "cornell-cat-feeding#by-life-stage",
     "aspca-cat-care#water-and-food",
     "aspca-cat-care#enrichment",
     "akc-exercise#senior-dogs",
+    "aaha-senior-care#who-counts-as-senior",
+    "aaha-senior-care#vet-visits",
+    "aaha-senior-care#mobility-and-comfort",
+    "aspca-cat-care#litter-box",
     "akc-exercise#general",
     "akc-exercise#adult-dogs",
+    "akc-exercise#overview",
     "pvc-home-safety#pet-proofing-for-puppies-and-kittens"
    ],
    "proposals": [
     {
      "pet": "Mochi",
      "task": "Refresh water bowl",
-     "min": 2,
+     "min": 5,
      "priority": "high",
      "verdict": "ok",
      "cites": [
@@ -95,7 +102,7 @@ window.WW_DATA = {
     {
      "pet": "Luna",
      "task": "Wash and refill water bowl",
-     "min": 2,
+     "min": 5,
      "priority": "high",
      "verdict": "ok",
      "cites": [
@@ -111,20 +118,8 @@ window.WW_DATA = {
      "priority": "high",
      "verdict": "ok",
      "cites": [
-      "pvc-daily-routine#overview",
-      "aaha-senior-care#mobility-and-comfort"
-     ],
-     "issues": []
-    },
-    {
-     "pet": "Luna",
-     "task": "Play gently",
-     "min": 5,
-     "priority": "medium",
-     "verdict": "ok",
-     "cites": [
-      "aspca-cat-care#enrichment",
-      "aaha-senior-care#mobility-and-comfort"
+      "aspca-cat-care#litter-box",
+      "pvc-daily-routine#overview"
      ],
      "issues": []
     }
@@ -134,24 +129,18 @@ window.WW_DATA = {
      "time": "07:30",
      "pet": "Mochi",
      "task": "Refresh water bowl",
-     "min": 2
-    },
-    {
-     "time": "07:32",
-     "pet": "Luna",
-     "task": "Wash and refill water bowl",
-     "min": 2
-    },
-    {
-     "time": "07:34",
-     "pet": "Luna",
-     "task": "Scoop litter box",
      "min": 5
     },
     {
-     "time": "07:39",
+     "time": "07:35",
      "pet": "Luna",
-     "task": "Play gently",
+     "task": "Wash and refill water bowl",
+     "min": 5
+    },
+    {
+     "time": "07:40",
+     "pet": "Luna",
+     "task": "Scoop litter box",
      "min": 5
     },
     {
@@ -163,7 +152,29 @@ window.WW_DATA = {
    ],
    "confidence": 0.9,
    "grounded": 1.0,
-   "rounds": 1
+   "rounds": 1,
+   "caution": "",
+   "conflicts": [
+    {
+     "topic": "vet exam",
+     "claims": [
+      {
+       "source": "Senior dog and cat care",
+       "stage": "senior",
+       "sentence": "Exams every six months, even when the pet seems healthy (AVMA: at least twice a year).",
+       "chunk": "aaha-senior-care#vet-visits"
+      },
+      {
+       "source": "Cat care basics (litter, water, grooming, vet visits)",
+       "stage": null,
+       "sentence": "A vet exam at least once a year, and right away if the cat is sick or injured.",
+       "chunk": "aspca-cat-care#vet-care-and-safety"
+      }
+     ]
+    }
+   ],
+   "health": [],
+   "checkins": []
   },
   {
    "key": "meds",
@@ -204,7 +215,7 @@ window.WW_DATA = {
     },
     {
      "stage": "done",
-     "message": "Plan ready after 1 round(s). Confidence 0.93. Waiting for your approval."
+     "message": "Plan ready after 1 round(s). Confidence 0.90. Waiting for your approval."
     }
    ],
    "retrieved": [
@@ -230,7 +241,7 @@ window.WW_DATA = {
     },
     {
      "pet": "Mochi",
-     "task": "Feed adult meal",
+     "task": "Serve adult meal",
      "min": 5,
      "priority": "high",
      "verdict": "ok",
@@ -241,7 +252,7 @@ window.WW_DATA = {
     },
     {
      "pet": "Mochi",
-     "task": "Give heartworm preventive as prescribed",
+     "task": "Give prescribed heartworm preventive",
      "min": 5,
      "priority": "high",
      "verdict": "needs_review",
@@ -255,7 +266,7 @@ window.WW_DATA = {
     },
     {
      "pet": "Mochi",
-     "task": "Walk Mochi outdoors",
+     "task": "Walk Mochi",
      "min": 30,
      "priority": "high",
      "verdict": "ok",
@@ -267,7 +278,7 @@ window.WW_DATA = {
     },
     {
      "pet": "Mochi",
-     "task": "Play and watch for illness",
+     "task": "Play and check health",
      "min": 10,
      "priority": "medium",
      "verdict": "ok",
@@ -298,25 +309,25 @@ window.WW_DATA = {
     {
      "time": "07:35",
      "pet": "Mochi",
-     "task": "Feed adult meal",
+     "task": "Serve adult meal",
      "min": 5
     },
     {
      "time": "07:40",
      "pet": "Mochi",
-     "task": "Give heartworm preventive as prescribed",
+     "task": "Give prescribed heartworm preventive",
      "min": 5
     },
     {
      "time": "07:45",
      "pet": "Mochi",
-     "task": "Walk Mochi outdoors",
+     "task": "Walk Mochi",
      "min": 30
     },
     {
      "time": "08:15",
      "pet": "Mochi",
-     "task": "Play and watch for illness",
+     "task": "Play and check health",
      "min": 10
     },
     {
@@ -326,9 +337,13 @@ window.WW_DATA = {
      "min": 5
     }
    ],
-   "confidence": 0.93,
+   "confidence": 0.9,
    "grounded": 1.0,
-   "rounds": 1
+   "rounds": 1,
+   "caution": "",
+   "conflicts": [],
+   "health": [],
+   "checkins": []
   },
   {
    "key": "emergency",
@@ -357,7 +372,418 @@ window.WW_DATA = {
    "schedule": [],
    "confidence": 0.0,
    "grounded": 0.0,
-   "rounds": 0
+   "rounds": 0,
+   "caution": "",
+   "conflicts": [],
+   "health": [],
+   "checkins": []
+  },
+  {
+   "key": "conflict",
+   "label": "\u2696\ufe0f Sources disagree",
+   "sub": "senior cat \u00b7 60 min",
+   "title": "Sources disagree",
+   "request": "Luna is 12 now, when should she see the vet?",
+   "pets": [
+    {
+     "name": "Luna",
+     "species": "cat",
+     "age": 12
+    }
+   ],
+   "minutes": 60,
+   "stopped": false,
+   "stopReason": "",
+   "trace": [
+    {
+     "stage": "input",
+     "message": "AI safety check: not an emergency."
+    },
+    {
+     "stage": "retrieve",
+     "message": "Retrieved 10 guideline excerpts."
+    },
+    {
+     "stage": "conflicts",
+     "message": "1 source conflict(s): Sources differ on vet exam: Senior dog and cat care says every six months (for senior pets); Cat care basics (litter, water, grooming, vet visits) says at least once a year."
+    },
+    {
+     "stage": "plan",
+     "message": "Round 1: claude planner proposed 4 task(s)."
+    },
+    {
+     "stage": "guardrails",
+     "message": "3 ok, 1 need your review, 0 blocked."
+    },
+    {
+     "stage": "schedule",
+     "message": "Dry run: 4 scheduled, 0 skipped, 0 conflict(s)."
+    },
+    {
+     "stage": "done",
+     "message": "Plan ready after 1 round(s). Confidence 0.90. Waiting for your approval."
+    }
+   ],
+   "retrieved": [
+    "pvc-daily-routine#overview",
+    "aspca-cat-care#enrichment",
+    "aspca-cat-care#water-and-food",
+    "aaha-senior-care#who-counts-as-senior",
+    "aaha-senior-care#vet-visits",
+    "aspca-cat-care#litter-box",
+    "aspca-cat-care#overview",
+    "aspca-cat-care#grooming-and-scratching",
+    "pvc-emergencies#overview",
+    "pvc-vet-visits#overview"
+   ],
+   "proposals": [
+    {
+     "pet": "Luna",
+     "task": "Refresh water bowl",
+     "min": 5,
+     "priority": "high",
+     "verdict": "ok",
+     "cites": [
+      "aspca-cat-care#water-and-food",
+      "pvc-daily-routine#overview"
+     ],
+     "issues": []
+    },
+    {
+     "pet": "Luna",
+     "task": "Scoop litter box",
+     "min": 10,
+     "priority": "high",
+     "verdict": "ok",
+     "cites": [
+      "aspca-cat-care#litter-box",
+      "pvc-daily-routine#overview"
+     ],
+     "issues": []
+    },
+    {
+     "pet": "Luna",
+     "task": "Play gently together",
+     "min": 15,
+     "priority": "medium",
+     "verdict": "ok",
+     "cites": [
+      "aspca-cat-care#enrichment"
+     ],
+     "issues": []
+    },
+    {
+     "pet": "Luna",
+     "task": "Schedule senior vet exam",
+     "min": 5,
+     "priority": "high",
+     "verdict": "needs_review",
+     "cites": [
+      "aaha-senior-care#vet-visits",
+      "aaha-senior-care#who-counts-as-senior",
+      "pvc-vet-visits#overview"
+     ],
+     "issues": [
+      "Sources differ on vet exam: Senior dog and cat care says every six months (for senior pets); Cat care basics (litter, water, grooming, vet visits) says at least once a year. Ask your vet which applies."
+     ]
+    }
+   ],
+   "schedule": [
+    {
+     "time": "07:30",
+     "pet": "Luna",
+     "task": "Refresh water bowl",
+     "min": 5
+    },
+    {
+     "time": "07:35",
+     "pet": "Luna",
+     "task": "Schedule senior vet exam",
+     "min": 5
+    },
+    {
+     "time": "07:40",
+     "pet": "Luna",
+     "task": "Scoop litter box",
+     "min": 10
+    },
+    {
+     "time": "07:50",
+     "pet": "Luna",
+     "task": "Play gently together",
+     "min": 15
+    }
+   ],
+   "confidence": 0.9,
+   "grounded": 1.0,
+   "rounds": 1,
+   "caution": "",
+   "conflicts": [
+    {
+     "topic": "vet exam",
+     "claims": [
+      {
+       "source": "Senior dog and cat care",
+       "stage": "senior",
+       "sentence": "Exams every six months, even when the pet seems healthy (AVMA: at least twice a year).",
+       "chunk": "aaha-senior-care#vet-visits"
+      },
+      {
+       "source": "Cat care basics (litter, water, grooming, vet visits)",
+       "stage": null,
+       "sentence": "A vet exam at least once a year, and right away if the cat is sick or injured.",
+       "chunk": "aspca-cat-care#vet-care-and-safety"
+      }
+     ]
+    }
+   ],
+   "health": [],
+   "checkins": []
+  },
+  {
+   "key": "health",
+   "label": "\ud83d\udcc8 Health trend",
+   "sub": "check-ins \u00b7 60 min",
+   "title": "Health trend",
+   "request": "Normal day, nothing special",
+   "pets": [
+    {
+     "name": "Mochi",
+     "species": "dog",
+     "age": 3
+    },
+    {
+     "name": "Luna",
+     "species": "cat",
+     "age": 6
+    }
+   ],
+   "minutes": 60,
+   "stopped": false,
+   "stopReason": "",
+   "trace": [
+    {
+     "stage": "input",
+     "message": "AI safety check: not an emergency."
+    },
+    {
+     "stage": "health",
+     "message": "1 health trend(s) from the daily check-ins: Luna has eaten less than usual 3 days in a row. That's worth a call to your vet."
+    },
+    {
+     "stage": "retrieve",
+     "message": "Retrieved 12 guideline excerpts."
+    },
+    {
+     "stage": "plan",
+     "message": "Round 1: claude planner proposed 7 task(s)."
+    },
+    {
+     "stage": "guardrails",
+     "message": "7 ok, 0 need your review, 0 blocked."
+    },
+    {
+     "stage": "schedule",
+     "message": "Dry run: 7 scheduled, 0 skipped, 0 conflict(s)."
+    },
+    {
+     "stage": "done",
+     "message": "Plan ready after 1 round(s). Confidence 0.93. Waiting for your approval."
+    }
+   ],
+   "retrieved": [
+    "pvc-daily-routine#overview",
+    "aspca-cat-care#enrichment",
+    "aspca-cat-care#water-and-food",
+    "cornell-cat-feeding#by-life-stage",
+    "cornell-cat-feeding#practical-points",
+    "aspca-cat-care#overview",
+    "akc-exercise#adult-dogs",
+    "merck-puppy-care#feeding-schedule",
+    "akc-exercise#senior-dogs",
+    "akc-exercise#puppies",
+    "akc-exercise#general",
+    "pvc-weekly-check#overview"
+   ],
+   "proposals": [
+    {
+     "pet": "Luna",
+     "task": "Call vet about appetite",
+     "min": 5,
+     "priority": "high",
+     "verdict": "ok",
+     "cites": [
+      "pvc-weekly-check#overview"
+     ],
+     "issues": []
+    },
+    {
+     "pet": "Mochi",
+     "task": "Walk dog",
+     "min": 30,
+     "priority": "high",
+     "verdict": "ok",
+     "cites": [
+      "pvc-daily-routine#overview",
+      "akc-exercise#adult-dogs"
+     ],
+     "issues": []
+    },
+    {
+     "pet": "Mochi",
+     "task": "Refresh water bowl",
+     "min": 5,
+     "priority": "high",
+     "verdict": "ok",
+     "cites": [
+      "pvc-daily-routine#overview"
+     ],
+     "issues": []
+    },
+    {
+     "pet": "Mochi",
+     "task": "Serve adult meal",
+     "min": 5,
+     "priority": "high",
+     "verdict": "ok",
+     "cites": [
+      "merck-puppy-care#feeding-schedule"
+     ],
+     "issues": []
+    },
+    {
+     "pet": "Luna",
+     "task": "Wash and refill water bowl",
+     "min": 5,
+     "priority": "high",
+     "verdict": "ok",
+     "cites": [
+      "aspca-cat-care#water-and-food"
+     ],
+     "issues": []
+    },
+    {
+     "pet": "Luna",
+     "task": "Serve fresh food",
+     "min": 5,
+     "priority": "high",
+     "verdict": "ok",
+     "cites": [
+      "cornell-cat-feeding#by-life-stage",
+      "cornell-cat-feeding#practical-points"
+     ],
+     "issues": []
+    },
+    {
+     "pet": "Luna",
+     "task": "Scoop litter box",
+     "min": 5,
+     "priority": "high",
+     "verdict": "ok",
+     "cites": [
+      "pvc-daily-routine#overview"
+     ],
+     "issues": []
+    }
+   ],
+   "schedule": [
+    {
+     "time": "07:30",
+     "pet": "Mochi",
+     "task": "Refresh water bowl",
+     "min": 5
+    },
+    {
+     "time": "07:35",
+     "pet": "Mochi",
+     "task": "Serve adult meal",
+     "min": 5
+    },
+    {
+     "time": "07:40",
+     "pet": "Luna",
+     "task": "Call vet about appetite",
+     "min": 5
+    },
+    {
+     "time": "07:45",
+     "pet": "Luna",
+     "task": "Wash and refill water bowl",
+     "min": 5
+    },
+    {
+     "time": "07:50",
+     "pet": "Luna",
+     "task": "Serve fresh food",
+     "min": 5
+    },
+    {
+     "time": "07:55",
+     "pet": "Luna",
+     "task": "Scoop litter box",
+     "min": 5
+    },
+    {
+     "time": "08:00",
+     "pet": "Mochi",
+     "task": "Walk dog",
+     "min": 30
+    }
+   ],
+   "confidence": 0.93,
+   "grounded": 1.0,
+   "rounds": 1,
+   "caution": "Luna has eaten less than usual 3 days in a row. That's worth a call to your vet.",
+   "conflicts": [],
+   "health": [
+    {
+     "pet": "Luna",
+     "level": "call_vet",
+     "message": "Luna has eaten less than usual 3 days in a row. That's worth a call to your vet."
+    },
+    {
+     "pet": "Luna",
+     "level": "watch",
+     "message": "Luna seemed a bit low on energy."
+    }
+   ],
+   "checkins": [
+    {
+     "day": "Thu",
+     "appetite": "normal",
+     "energy": "normal"
+    },
+    {
+     "day": "Fri",
+     "appetite": "normal",
+     "energy": "normal"
+    },
+    {
+     "day": "Sat",
+     "appetite": "normal",
+     "energy": "normal"
+    },
+    {
+     "day": "Sun",
+     "appetite": "normal",
+     "energy": "normal"
+    },
+    {
+     "day": "Mon",
+     "appetite": "less",
+     "energy": "normal"
+    },
+    {
+     "day": "Tue",
+     "appetite": "less",
+     "energy": "normal"
+    },
+    {
+     "day": "Wed",
+     "appetite": "less",
+     "energy": "low"
+    }
+   ]
   }
  ],
  "redTeam": [
@@ -439,5 +865,15 @@ window.WW_DATA = {
    "verdict": "needs_review",
    "reason": "vet-sensitive: confirm product and schedule with your veterinarian"
   }
- ]
+ ],
+ "redTeamAI": {
+  "rules": {
+   "caught": 9,
+   "total": 50
+  },
+  "ai": {
+   "caught": 49,
+   "total": 50
+  }
+ }
 };

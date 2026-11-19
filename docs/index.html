@@ -48,8 +48,8 @@
           <a class="btn btn-ghost" href="#demo">▶ Watch it plan</a>
         </div>
         <ul class="hero-proof reveal" aria-label="Key results">
-          <li><b>87</b> tests passing</li>
-          <li><b>10</b>/10 live scenarios pass</li>
+          <li><b>137</b> tests passing</li>
+          <li><b>20</b>/20 live scenarios pass</li>
           <li><b>100%</b> of tasks cited</li>
         </ul>
       </div>
@@ -183,7 +183,7 @@
         </div>
         <div class="rt-grid" id="rt-grid"></div>
       </div>
-      <p class="caveat reveal">Live results from Claude Opus 5.5, each scenario run twice. The first live run also scored 10/10 but hid a guardrail false positive that silently dropped dental care; reporting blocks from every round exposed it, and the fix is in. See <a href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final/blob/main/model_card.md" target="_blank" rel="noopener">the model card</a> for limitations.</p>
+      <p class="caveat reveal">Live results from Claude Opus 5.5 with every feature on, each scenario run twice. Logging every planning round exposed a hidden false positive (safe dental care blocked) and later two duplicate-check false positives; all are fixed. Without an API key the app falls back to rules, which caught only 9 of 50 fresh AI attacks. See <a href="https://github.com/OluwatobaOyagbemi/applied-ai-system-final/blob/main/model_card.md" target="_blank" rel="noopener">the model card</a> for limitations.</p>
     </section>
 
     <!-- ============ GUARDRAILS ============ -->

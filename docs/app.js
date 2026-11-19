@@ -44,16 +44,16 @@
       body: "Pets (species, age, notes), the minutes you have, and an optional request like “busy morning, Luna is getting older”.",
       file: "app.py" },
     { icon: "🛑", name: "Screen", sub: "input guardrail", title: "Emergencies stop here",
-      body: "Words like “ate chocolate”, “seizure” or “collapsed” halt everything before any AI call, and you're sent to a vet and the ASPCA poison line. Oversized input is rejected too.",
+      body: "Words like “ate chocolate” or “won't get up” halt everything, and a Claude Haiku check catches emergencies and manipulation attempts the patterns miss. Your daily check-ins count too: a worrying trend adds a call-the-vet task, and an urgent one stops planning.",
       file: "pawpal_ai/guardrails.py" },
     { icon: "🔎", name: "Fetch", sub: "RAG retrieval", title: "Look it up first",
-      body: `BM25 search over ${D.chunks || 30} chunks from ${D.documents || 9} vet-sourced documents, with one query per pet (species, life stage, notes) and other species filtered out.`,
+      body: `BM25 search over ${D.chunks || 62} chunks from ${D.documents || 16} vet sources, one query per pet. Then it cross-checks the whole library: if two sources disagree (like senior exam frequency), it shows both instead of picking one.`,
       file: "pawpal_ai/retriever.py" },
     { icon: "🧠", name: "Plan", sub: "Claude", title: "Claude drafts cited tasks",
       body: "Claude gets the excerpts and returns strict JSON (structured outputs). Every task must name the excerpt ids it relied on. No key? A deterministic offline planner takes over.",
       file: "pawpal_ai/planner.py" },
     { icon: "🛡️", name: "Check", sub: "task guardrails", title: "Every task is verified in code",
-      body: "Blocks missing or fake citations, drug names, doses, toxic treats, wrong-species tasks, duplicates and impossible times. Meds are flagged “check with vet”.",
+      body: "Code blocks missing or fake citations, drugs, doses, toxic treats, unsafe products and activities, and duplicates. Then a Claude Haiku reviewer gives a second opinion on every task: it caught 49/50 fresh AI-written attacks.",
       file: "pawpal_ai/guardrails.py" },
     { icon: "🗓️", name: "Dry-run", sub: "real scheduler", title: "Test the plan before showing it",
       body: "The agent runs the tested Module 2 scheduler on a copy of your pets. Over budget or blocked? That feedback goes back to the planner, up to 3 rounds.",
@@ -98,7 +98,7 @@
   /* ---------- demo player ---------- */
   const stories = $("#stories"), chat = $("#chat-body"), props = $("#proposals"), meters = $("#meters"), foot = $("#review-foot"), timeline = $("#timeline");
   $("#demo-mode").textContent = D.mode === "live" ? "Claude" : "offline";
-  const STAGE_LABEL = { input: "🧹 input", output: "🧾 output", retrieve: "🔎 fetch", plan: "🧠 plan", guardrails: "🛡️ check", schedule: "🗓️ dry-run", revise: "↺ revise", done: "✅ ready", stop: "🛑 stop" };
+  const STAGE_LABEL = { conflicts: "⚖️ sources", health: "📈 health", input: "🧹 input", output: "🧾 output", retrieve: "🔎 fetch", plan: "🧠 plan", guardrails: "🛡️ check", schedule: "🗓️ dry-run", revise: "↺ revise", done: "✅ ready", stop: "🛑 stop" };
   const petIcon = (sc, name) => { const p = sc.pets.find((x) => x.name === name); return p && p.species === "cat" ? "🐱" : "🐶"; };
   const scenarios = [...D.scenarios, { key: "unsafe", label: "🧪 Unsafe AI", sub: "red team", synthetic: true }];
   let runId = 0;
@@ -126,6 +126,10 @@
     if (sc.synthetic) return playRedTeam(id);
 
     $("#chat-sub").textContent = `${sc.pets.map((p) => `${p.name} (${p.species}, ${p.age})`).join(" · ")} · ${sc.minutes} min`;
+    if (sc.checkins && sc.checkins.length) {
+      const dots = sc.checkins.map((c) => `<span class="ci ${c.appetite}" title="${esc(c.day)}: appetite ${esc(c.appetite)}">${esc(c.day[0])}</span>`).join("");
+      chat.appendChild(el("div", "bubble bot", `<span class="stage">📈 check-ins</span><br>${esc(sc.pets[sc.pets.length - 1].name)}'s appetite this week<div class="ci-row">${dots}</div>`));
+    }
     chat.appendChild(el("div", "bubble user", esc(sc.request))); scrollChat();
     for (const step of sc.trace) {
       if (!(await typing(id, step.stage === "plan" ? 900 : 550))) return;
@@ -137,6 +141,7 @@
       chat.appendChild(el("div", `bubble bot ${cls}`, html)); scrollChat();
     }
     if (id !== runId) return;
+    if (sc.caution) { chat.appendChild(el("div", "bubble bot revise", `<span class="stage">⚠️ caution</span><br>${esc(sc.caution)}`)); scrollChat(); }
 
     if (sc.stopped) {
       props.innerHTML = `<div class="empty-stop"><div class="big">🚨</div><b>Planning stopped. No tasks were suggested.</b><p class="muted">${esc(sc.stopReason)}</p></div>`;
@@ -147,6 +152,12 @@
       `<span class="meter">grounded <b>${Math.round(sc.grounded * 100)}%</b></span>`,
       `<span class="meter">rounds <b>${sc.rounds}</b></span>`,
     ].join("");
+    (sc.conflicts || []).forEach((c) => {
+      const box = el("div", "conflict-box");
+      box.innerHTML = `<b>⚖️ Sources disagree on ${esc(c.topic)}</b><span class="muted"> · WhiskerWise won't pick a side</span>` +
+        c.claims.map((cl) => `<p><i>${esc(cl.source)}</i>${cl.stage ? ` (for ${esc(cl.stage)} pets)` : ""}: “${esc(cl.sentence)}”</p>`).join("");
+      props.appendChild(box);
+    });
     const state = sc.proposals.map((p) => p.verdict === "ok");
     sc.proposals.forEach((p, k) => {
       const row = el("div", `prop ${p.verdict}`);
@@ -223,7 +234,8 @@
     { n: s.scenarios_passed, of: s.scenarios, lbl: "end-to-end scenarios pass", sub: `${s.checks_passed}/${s.checks} individual checks` },
     { n: s.red_team_caught + s.input_red_team_passed + s.output_red_team_passed, of: s.red_team + s.input_red_team + s.output_red_team, lbl: "red-team cases handled", sub: "Doses, toxic treats, fake citations, prompt injection, contact info, unsafe notes" },
     { n: Math.round((s.avg_confidence || 0) * 100), suffix: "%", lbl: "average confidence", sub: "Planner self-rating blended with guardrail survival" },
-    { n: 100, suffix: "%", lbl: "of kept tasks cited", sub: "No citation to a retrieved excerpt means blocked" },
+    D.redTeamAI && D.redTeamAI.ai ? { n: D.redTeamAI.ai.caught, of: D.redTeamAI.ai.total, lbl: "fresh AI attacks caught", sub: `Keyword rules alone caught ${D.redTeamAI.rules.caught}/${D.redTeamAI.rules.total}; the AI reviewer generalized` }
+      : { n: 100, suffix: "%", lbl: "of kept tasks cited", sub: "No citation to a retrieved excerpt means blocked" },
     { n: s.consistency, dec: 2, lbl: "run-to-run consistency", sub: `Same scenarios run twice · ${s.avg_rounds} planning rounds on average` },
   ];
   const statsWrap = $("#stats");

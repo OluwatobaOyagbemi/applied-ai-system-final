@@ -283,6 +283,12 @@ h3 { font-size: 1.2rem; font-weight: 600; }
 .empty-stop .big { font-size: 56px; animation: wiggle 1.2s var(--spring) both; }
 @keyframes wiggle { 0% { transform: scale(.3) rotate(-20deg); } 60% { transform: scale(1.1) rotate(8deg); } }
 
+.ci-row { display: flex; gap: 5px; margin-top: 8px; }
+.ci { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; font: 700 .72rem var(--mono); color: #fff; background: var(--ok); }
+.ci.less { background: var(--warn); } .ci.none { background: var(--bad); }
+.conflict-box { border-radius: 16px; padding: 12px 14px; background: var(--grad-soft); margin-bottom: 8px; animation: pop .5s var(--spring) both; }
+.conflict-box p { margin: 6px 0 0; font-size: .84rem; color: var(--ink-2); }
+
 /* ---------- stats ---------- */
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .stat { position: relative; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px; box-shadow: var(--shadow); transition: transform .45s var(--spring); }
