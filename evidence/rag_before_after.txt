@@ -1,18 +1,19 @@
-RAG before/after · 2026-11-18 21:46 · planner: claude
+RAG before/after · 2026-11-18 22:26 · planner: claude
 Owner: Luna (cat, 11), 60 min. Request: "What should Luna's daily routine include?"
 
 BEFORE: single source (AVMA overview only)
   retrieved: 6 chunks from 1 document(s)
   proposals kept: 3 · confidence 0.75
-    - Serve vet-recommended meals (10 min, daily) <- avma-overview#nutrition-and-weight
-    - Hold gentle play session (15 min, daily) <- avma-overview#behavior-and-training
+    - Feed vet-recommended portions (10 min, daily) <- avma-overview#nutrition-and-weight
+    - Play enrichment session (15 min, daily) <- avma-overview#behavior-and-training
     - Brush teeth (5 min, weekly) <- avma-overview#dental-health
 
-AFTER: multiple sources (AVMA + 8 Premier VetCare topic files)
-  retrieved: 6 chunks from 4 document(s)
-  proposals kept: 5 · confidence 0.82
-    - Refresh water bowl (5 min, daily) <- pvc-daily-routine#overview
+AFTER: full multi-source knowledge base (16 documents)
+  retrieved: 8 chunks from 6 document(s)
+  proposals kept: 6 · confidence 0.93
+    - Refresh water bowl (5 min, daily) <- aspca-cat-care#water-and-food, pvc-daily-routine#overview
     - Scoop litter box (10 min, daily) <- pvc-daily-routine#overview
-    - Brush teeth with pet toothpaste (5 min, daily) <- pvc-grooming-dental#dental
-    - Play enrichment session (15 min, daily) <- avma-overview#behavior-and-training
-    - Book vet dental checkup (5 min, once) <- pvc-grooming-dental#dental, avma-overview#preventive-care
+    - Serve usual meals (10 min, daily) <- cornell-cat-feeding#by-life-stage, aaha-senior-care#who-counts-as-senior
+    - Play interactive session (15 min, daily) <- aspca-cat-care#enrichment
+    - Brush teeth (5 min, daily) <- pvc-grooming-dental#dental, vca-dental-care#how-often
+    - Schedule senior vet exam (5 min, once) <- aaha-senior-care#vet-visits, aaha-senior-care#who-counts-as-senior

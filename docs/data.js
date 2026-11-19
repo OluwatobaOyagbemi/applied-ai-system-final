@@ -4,8 +4,8 @@ window.WW_DATA = {
  "summary": {
   "scenarios_passed": 19,
   "scenarios": 19,
-  "checks_passed": 112,
-  "checks": 112,
+  "checks_passed": 113,
+  "checks": 113,
   "red_team_caught": 13,
   "red_team": 13,
   "input_red_team_passed": 8,
@@ -13,9 +13,9 @@ window.WW_DATA = {
   "output_red_team_passed": 5,
   "output_red_team": 5,
   "blocked_all_rounds": 0,
-  "avg_confidence": 0.91,
+  "avg_confidence": 0.92,
   "avg_rounds": 1.0,
-  "consistency": 0.83
+  "consistency": 0.92
  },
  "tests": 97,
  "chunks": 62,
@@ -65,20 +65,20 @@ window.WW_DATA = {
     },
     {
      "stage": "done",
-     "message": "Plan ready after 1 round(s). Confidence 0.85. Waiting for your approval."
+     "message": "Plan ready after 1 round(s). Confidence 0.90. Waiting for your approval."
     }
    ],
    "retrieved": [
+    "cornell-cat-feeding#by-life-stage",
     "pvc-daily-routine#overview",
-    "pvc-grooming-dental#grooming",
-    "avma-overview#preventive-care",
-    "pvc-grooming-dental#dental",
-    "pvc-home-safety#pet-proofing-for-puppies-and-kittens",
-    "pvc-vet-visits#overview",
-    "pvc-vet-visits#vaccinations",
-    "pvc-grooming-dental#overview",
-    "pvc-emergencies#overview",
-    "pvc-home-safety#poisonous-plants-named-in-the-source"
+    "aaha-senior-care#mobility-and-comfort",
+    "aaha-senior-care#who-counts-as-senior",
+    "aspca-cat-care#water-and-food",
+    "aspca-cat-care#enrichment",
+    "akc-exercise#senior-dogs",
+    "akc-exercise#general",
+    "akc-exercise#adult-dogs",
+    "pvc-home-safety#pet-proofing-for-puppies-and-kittens"
    ],
    "proposals": [
     {
@@ -94,11 +94,12 @@ window.WW_DATA = {
     },
     {
      "pet": "Luna",
-     "task": "Refresh water bowl",
+     "task": "Wash and refill water bowl",
      "min": 2,
      "priority": "high",
      "verdict": "ok",
      "cites": [
+      "aspca-cat-care#water-and-food",
       "pvc-daily-routine#overview"
      ],
      "issues": []
@@ -110,18 +111,20 @@ window.WW_DATA = {
      "priority": "high",
      "verdict": "ok",
      "cites": [
-      "pvc-daily-routine#overview"
+      "pvc-daily-routine#overview",
+      "aaha-senior-care#mobility-and-comfort"
      ],
      "issues": []
     },
     {
-     "pet": "Mochi",
-     "task": "Play and watch health",
+     "pet": "Luna",
+     "task": "Play gently",
      "min": 5,
      "priority": "medium",
      "verdict": "ok",
      "cites": [
-      "pvc-daily-routine#overview"
+      "aspca-cat-care#enrichment",
+      "aaha-senior-care#mobility-and-comfort"
      ],
      "issues": []
     }
@@ -136,7 +139,7 @@ window.WW_DATA = {
     {
      "time": "07:32",
      "pet": "Luna",
-     "task": "Refresh water bowl",
+     "task": "Wash and refill water bowl",
      "min": 2
     },
     {
@@ -147,8 +150,8 @@ window.WW_DATA = {
     },
     {
      "time": "07:39",
-     "pet": "Mochi",
-     "task": "Play and watch health",
+     "pet": "Luna",
+     "task": "Play gently",
      "min": 5
     },
     {
@@ -158,7 +161,7 @@ window.WW_DATA = {
      "min": 30
     }
    ],
-   "confidence": 0.85,
+   "confidence": 0.9,
    "grounded": 1.0,
    "rounds": 1
   },
@@ -189,15 +192,15 @@ window.WW_DATA = {
     },
     {
      "stage": "plan",
-     "message": "Round 1: claude planner proposed 5 task(s)."
+     "message": "Round 1: claude planner proposed 6 task(s)."
     },
     {
      "stage": "guardrails",
-     "message": "4 ok, 1 need your review, 0 blocked."
+     "message": "5 ok, 1 need your review, 0 blocked."
     },
     {
      "stage": "schedule",
-     "message": "Dry run: 5 scheduled, 0 skipped, 0 conflict(s)."
+     "message": "Dry run: 6 scheduled, 0 skipped, 0 conflict(s)."
     },
     {
      "stage": "done",
@@ -206,11 +209,11 @@ window.WW_DATA = {
    ],
    "retrieved": [
     "pvc-daily-routine#overview",
-    "pvc-grooming-dental#grooming",
-    "pvc-parasites#fleas-and-ticks",
     "pvc-parasites#heartworm",
-    "avma-overview#preventive-care",
-    "pvc-emergencies#overview",
+    "akc-exercise#adult-dogs",
+    "pvc-parasites#fleas-and-ticks",
+    "merck-puppy-care#feeding-schedule",
+    "akc-exercise#senior-dogs",
     "pvc-parasites#planner-rules-from-this-source"
    ],
    "proposals": [
@@ -227,18 +230,18 @@ window.WW_DATA = {
     },
     {
      "pet": "Mochi",
-     "task": "Walk the dog",
-     "min": 30,
+     "task": "Feed adult meal",
+     "min": 5,
      "priority": "high",
      "verdict": "ok",
      "cites": [
-      "pvc-daily-routine#overview"
+      "merck-puppy-care#feeding-schedule"
      ],
      "issues": []
     },
     {
      "pet": "Mochi",
-     "task": "Give vet-prescribed heartworm preventive",
+     "task": "Give heartworm preventive as prescribed",
      "min": 5,
      "priority": "high",
      "verdict": "needs_review",
@@ -252,7 +255,19 @@ window.WW_DATA = {
     },
     {
      "pet": "Mochi",
-     "task": "Play and watch health",
+     "task": "Walk Mochi outdoors",
+     "min": 30,
+     "priority": "high",
+     "verdict": "ok",
+     "cites": [
+      "pvc-daily-routine#overview",
+      "akc-exercise#adult-dogs"
+     ],
+     "issues": []
+    },
+    {
+     "pet": "Mochi",
+     "task": "Play and watch for illness",
      "min": 10,
      "priority": "medium",
      "verdict": "ok",
@@ -263,8 +278,8 @@ window.WW_DATA = {
     },
     {
      "pet": "Mochi",
-     "task": "Remove yard droppings",
-     "min": 10,
+     "task": "Pick up yard droppings",
+     "min": 5,
      "priority": "low",
      "verdict": "ok",
      "cites": [
@@ -283,26 +298,32 @@ window.WW_DATA = {
     {
      "time": "07:35",
      "pet": "Mochi",
-     "task": "Give vet-prescribed heartworm preventive",
+     "task": "Feed adult meal",
      "min": 5
     },
     {
      "time": "07:40",
      "pet": "Mochi",
-     "task": "Walk the dog",
+     "task": "Give heartworm preventive as prescribed",
+     "min": 5
+    },
+    {
+     "time": "07:45",
+     "pet": "Mochi",
+     "task": "Walk Mochi outdoors",
      "min": 30
     },
     {
-     "time": "08:10",
+     "time": "08:15",
      "pet": "Mochi",
-     "task": "Play and watch health",
+     "task": "Play and watch for illness",
      "min": 10
     },
     {
-     "time": "08:20",
+     "time": "08:25",
      "pet": "Mochi",
-     "task": "Remove yard droppings",
-     "min": 10
+     "task": "Pick up yard droppings",
+     "min": 5
     }
    ],
    "confidence": 0.93,
