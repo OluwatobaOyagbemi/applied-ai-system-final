@@ -141,8 +141,9 @@ elif claude_available:
                "the offline planner (same knowledge base and guardrails, no LLM).")
 else:
     agent = get_offline_agent()
-    st.caption("Offline mode: no `ANTHROPIC_API_KEY` found, so suggestions come straight from the "
-               "knowledge base. Add a key to `.env` to use Claude.")
+    st.caption("Running in offline mode (no Claude key configured): suggestions come straight from the "
+               "vet-sourced knowledge base, with the same guardrails. Running it yourself? Add "
+               "`ANTHROPIC_API_KEY` to `.env` to use Claude.")
 
 if not owner.pets:
     st.caption("Add a pet first, then ask the AI to suggest a care plan.")

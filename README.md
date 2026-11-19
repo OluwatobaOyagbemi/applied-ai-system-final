@@ -2,7 +2,7 @@
 
 *Formerly PawPal+ AI. Built on my Module 2 project, PawPal+.*
 
-**🚀 Try the app:** https://whiskerwise.streamlit.app (no sign-up; click *Load sample pets*)  
+**🚀 Try the app:** https://whiskerwise-ai.streamlit.app (no sign-up; click *Load sample pets*)  
 **🌐 Project site:** https://oluwatobaoyagbemi.github.io/applied-ai-system-final/ (interactive demo replaying real runs)
 
 **An AI pet-care planner that looks up vetted guidelines before it suggests anything, checks its own work, and never changes your pets' schedule without your approval.**
@@ -113,7 +113,7 @@ The planner defaults to `claude-opus-5-5` and the emergency classifier to `claud
 
 1. Sign in at [share.streamlit.io](https://share.streamlit.io) with GitHub and click **Create app → Deploy a public app from GitHub**.
 2. Repository `OluwatobaOyagbemi/applied-ai-system-final`, branch `main`, main file `app.py`. Under **Advanced settings**, pick Python 3.13 and paste into **Secrets**: `ANTHROPIC_API_KEY = "sk-ant-..."`.
-3. Set the app URL to `whiskerwise` and click **Deploy**.
+3. Set the app URL (this project uses `whiskerwise-ai`) and click **Deploy**.
 4. In the Anthropic Console, set a monthly spend limit as a backstop. The app also caps Claude at `WW_DAILY_AI_LIMIT` (default 30) plans per day and `WW_SESSION_AI_LIMIT` (default 5) per visitor, then falls back to the offline planner.
 
 ---
@@ -353,7 +353,7 @@ It also taught me that sources matter as much as code. The first veterinary broc
 ## 💼 Portfolio
 
 - **Code:** https://github.com/OluwatobaOyagbemi/applied-ai-system-final
-- **Live app:** https://whiskerwise.streamlit.app
+- **Live app:** https://whiskerwise-ai.streamlit.app
 - **Landing page:** https://oluwatobaoyagbemi.github.io/applied-ai-system-final/
 - **What this project says about me as an AI engineer:** I don't treat the model as the product. I treat it as one component that has to earn trust. In WhiskerWise, Claude suggests the plan, but retrieval decides what it's allowed to know, code-level guardrails decide what's allowed through, the existing scheduler checks whether the plan actually works, and a person makes the final call. I care about evidence: every claim in this README is backed by a test, an evaluation run or a committed log, and where a result was weaker than it looked (like a live 10/10 that hid a guardrail silently dropping dental care), I dug in and said so instead of rounding up. I also learned that responsible AI starts before the code. Choosing and cleaning the sources mattered as much as any prompt.
 
