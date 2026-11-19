@@ -141,7 +141,7 @@ else:
 
     alerts = analyze(health, owner.pets)
     for a in alerts:
-        text = f"{a.icon} **{a.pet_name}:** {a.message}  \nBased on: `{a.source}`"
+        text = f"{a.icon} {a.message}"
         (st.error if a.level == "urgent" else st.warning if a.level == "call_vet" else st.info)(text)
 
     if health.entries:
