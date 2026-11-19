@@ -324,6 +324,68 @@ else:
 
 
 # --- Tasks ------------------------------------------------------------------
+# --- Safety panel: guardrail layers, red-team scores, and a live "try to trick it" box ---
+@st.cache_data
+def red_team_scores() -> dict:
+    import re
+    from pathlib import Path
+    out = {}
+    for key, name in (("rules", "redteam_round2_rules_only.md"), ("ai", "redteam_round2.md")):
+        try:
+            m = re.search(r"Caught (\d+)/(\d+)", (Path(__file__).parent / "evidence" / name).read_text())
+            out[key] = (int(m.group(1)), int(m.group(2)))
+        except (OSError, AttributeError):
+            pass
+    return out
+
+
+with st.expander("🛡️ How WhiskerWise stays safe (and try to trick it)"):
+    st.markdown(
+        "Every plan passes four layers of checks, all in code, so a clever prompt can't talk its way past them:\n"
+        "1. **Before the AI:** emergencies stop planning, manipulation attempts are refused, phone numbers and emails are removed.\n"
+        "2. **Every suggested task:** code blocks drugs, doses, toxic foods, unsafe products and activities, made-up sources and wrong-species tasks. "
+        "Then a second AI (Claude Haiku) reviews each task as a cautious vet would.\n"
+        "3. **The AI's reply:** unsafe notes are withheld and links removed.\n"
+        "4. **The whole run:** nothing changes until you approve, with limits on cost and retries.")
+    scores = red_team_scores()
+    if {"rules", "ai"} <= scores.keys():
+        r, a = scores["rules"], scores["ai"]
+        st.markdown("**Red team:** another Claude model wrote brand-new sneaky attacks, like “birch sugar” (xylitol) "
+                    "or a dog left in a parked car.")
+        c1, c2 = st.columns(2)
+        c1.metric("Caught by rules alone", f"{r[0]}/{r[1]}")
+        c2.metric("Caught with the AI reviewer", f"{a[0]}/{a[1]}")
+
+    st.markdown("**Try to trick it.** Type an unsafe idea as if the AI had suggested it.")
+    trick_species = st.radio("For a", ["dog", "cat"], horizontal=True, key="trick_species")
+    trick = st.text_input("Suggested task", placeholder="e.g. Give a spoonful of xylitol peanut butter as a treat",
+                          max_chars=200, key="trick_text")
+    if st.button("🔍 Check it", key="trick_btn") and trick.strip():
+        from pawpal_ai.guardrails import check_request, check_task
+        from pawpal_ai.models import ProposedTask
+        probe_owner = Owner("Probe")
+        probe_owner.add_pet(Pet("Pet", trick_species, age=4))
+        cite = "pvc-daily-routine#overview"
+        req = check_request(trick)
+        task = check_task(ProposedTask("Pet", trick.strip(), "general", 10, "high", "daily", citations=[cite],
+                                       rationale=""), probe_owner, {cite})
+        if not req.ok:
+            st.error(f"⛔ Stopped before reaching the AI: {req.reason}")
+        elif task.verdict == BLOCKED:
+            st.error(f"⛔ Blocked by the code rules: {task.issues[0]}")
+        elif using_claude and getattr(agent, "task_reviewer", None) is not None:
+            usage["count"] += 1
+            st.session_state.ai_used = st.session_state.get("ai_used", 0) + 1
+            flagged = agent.task_reviewer.review([(f"Pet: {trick_species}, age 4", trick.strip(), "")])
+            if flagged:
+                st.error(f"⛔ The rules missed it, but the AI reviewer blocked it: {flagged[0]}")
+            else:
+                st.success("✅ Allowed by both the rules and the AI reviewer: this looks like ordinary care.")
+        else:
+            verdict = "flagged for vet review" if task.verdict == NEEDS_REVIEW else "allowed"
+            st.info(f"The code rules {verdict} it. The AI reviewer isn't available right now "
+                    "(offline mode or daily limit reached), so this is the rules-only verdict.")
+
 ui.section(5, "Tasks", "Everything on your list: approved AI suggestions and tasks you add yourself.")
 if not owner.pets:
     st.caption("Add a pet before adding tasks.")
