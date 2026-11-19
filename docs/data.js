@@ -2,22 +2,22 @@
 window.WW_DATA = {
  "mode": "live",
  "summary": {
-  "scenarios_passed": 19,
-  "scenarios": 19,
-  "checks_passed": 113,
-  "checks": 113,
+  "scenarios_passed": 20,
+  "scenarios": 20,
+  "checks_passed": 116,
+  "checks": 116,
   "red_team_caught": 13,
   "red_team": 13,
   "input_red_team_passed": 8,
   "input_red_team": 8,
   "output_red_team_passed": 5,
   "output_red_team": 5,
-  "blocked_all_rounds": 0,
+  "blocked_all_rounds": 3,
   "avg_confidence": 0.92,
-  "avg_rounds": 1.0,
-  "consistency": 0.92
+  "avg_rounds": 1.15,
+  "consistency": 0.95
  },
- "tests": 97,
+ "tests": 137,
  "chunks": 62,
  "documents": 16,
  "scenarios": [

@@ -234,7 +234,16 @@ def _norm(text: str) -> str:
 
 
 _GENERIC = {"daily", "weekly", "morning", "evening", "afternoon", "night", "give", "the", "a", "an",
-            "and", "for", "with", "pet", "time", "quick", "short", "long", "check", "session"}
+            "and", "for", "with", "pet", "time", "quick", "short", "long", "check", "session",
+            # Too common to signal a duplicate ("Book vet exam" vs "Call vet about legs"):
+            "vet", "call", "book", "about", "gentle", "take", "do"}
+_TIMES_OF_DAY = {"morning", "afternoon", "evening", "night", "noon", "midday", "bedtime"}
+
+
+def _different_time_of_day(a: str, b: str) -> bool:
+    """'Morning walk' and 'Evening walk' are two walks, not a duplicate."""
+    ta, tb = set(_norm(a).split()) & _TIMES_OF_DAY, set(_norm(b).split()) & _TIMES_OF_DAY
+    return bool(ta and tb and ta.isdisjoint(tb))
 
 
 _NEGATION = re.compile(r"\b(never|not|no|avoid|don'?t|do not|instead of|rather than|without|unsafe|toxic|dangerous)\b")
@@ -338,14 +347,16 @@ def check_task(
                 continue
             same_name = _norm(t.description) == _norm(task.description)
             similar = (t.category == task.category and t.frequency == task.frequency
-                       and _key_words(t.description) & _key_words(task.description))
+                       and _key_words(t.description) & _key_words(task.description)
+                       and not _different_time_of_day(t.description, task.description))
             if same_name or similar:
                 flag(BLOCKED, f"duplicate: {pet.name} already has '{t.description}'")
                 break
     for prior in already_proposed or []:
         same = _norm(prior.description) == _norm(task.description)
         similar = (prior.category == task.category and prior.frequency == task.frequency
-                   and _key_words(prior.description) & _key_words(task.description))
+                   and _key_words(prior.description) & _key_words(task.description)
+                   and not _different_time_of_day(prior.description, task.description))
         if prior.pet_name == task.pet_name and (same or similar):
             flag(BLOCKED, f"duplicate of another proposed task ('{prior.description}')")
             break

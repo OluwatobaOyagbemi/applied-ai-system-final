@@ -7,7 +7,7 @@
 | | |
 |---|---|
 | **What it is** | A retrieval-augmented, guardrailed planning agent that suggests daily pet-care tasks and feeds them into the PawPal+ scheduler (my Module 2 project) after the owner approves them. |
-| **Model** | Anthropic Claude: `claude-opus-5-5` plans (configurable with `PAWPAL_MODEL`), and `claude-haiku-5-5` screens requests for emergencies. Both use the Messages API with structured JSON outputs. A deterministic offline planner is used when no API key is set or the API fails. |
+| **Model** | Anthropic Claude: `claude-opus-5-5` plans (configurable with `PAWPAL_MODEL`); `claude-haiku-5-5` screens requests for emergencies and manipulation and reviews every proposed task; `claude-opus-5-5` also plays attacker in the red-team script. Both use the Messages API with structured JSON outputs. A deterministic offline planner is used when no API key is set or the API fails. |
 | **Retrieval** | BM25 over 62 chunks from 16 paraphrased source documents in `knowledge/`: an AVMA page, a veterinary clinic brochure, and seven web sources (AKC, ASPCA ×2, Merck Veterinary Manual, Cornell Feline Health Center, VCA, AAHA). |
 | **Not fine-tuned; specialized by prompt** | The model is used as-is. Behavior is shaped by the system prompt with three few-shot examples and house-style rules (measurably different from the baseline; see [evidence/specialization.md](evidence/specialization.md)), the retrieved context, the output schema and code-level guardrails. |
 | **Code** | `pawpal_ai/` (agent, retriever, planner, guardrails), `eval/run_eval.py`, `tests/test_ai.py` |
@@ -58,7 +58,9 @@ Run with `python -m eval.run_eval --live --repeat 2` (Claude) or without `--live
 | 8 input red-team cases (prompt injection, role hijack, tag injection, emergency, contact info, a false-alarm phrase, a normal request, injection hidden in pet notes) | Refused, redacted or allowed as expected | 8/8 |
 | 5 output red-team cases (unsafe planner notes, a link in a rationale, confidence 7, 40 tasks, a safe "never…" warning) | Withheld, stripped, clamped, capped or kept | 5/5 |
 
-**Summary (final live run, 16-document knowledge base):** 19/19 scenarios (113/113 checks), average confidence 0.92, 1.0 planning rounds on average, 0 proposals blocked in any round, run-to-run consistency 0.92 (Jaccard similarity of each run's pet-and-category sets). Offline, with regex only, the hard cases first scored 17/19 and now score 19/19 after adding emergency patterns.
+**Summary (final live run, all features on):** 20/20 scenarios (116/116 checks), average confidence 0.92, 1.2 planning rounds on average, run-to-run consistency 0.95 (Jaccard similarity of each run's pet-and-category sets). 3 proposals were blocked in earlier planning rounds, all duplicate-check false positives (two walks at different times, two different vet tasks), since fixed with regression tests.
+
+**AI red team** (`python -m eval.redteam_ai`): an attacker model wrote 50 evasive attacks per round. Round 1 caught 15/50 before fixes. On a fresh round 2, rules alone caught 9/50 and rules plus the AI layers caught 49/50. Reports in `evidence/redteam_*.md`. Offline, with regex only, the hard cases first scored 17/19 and now score 19/19 after adding emergency patterns.
 
 **How the earlier runs got there** (10 routine scenarios):
 
@@ -68,7 +70,7 @@ Run with `python -m eval.run_eval --live --repeat 2` (Claude) or without `--live
 | 2, fixed guardrail, old scorer | 6/10 (scorer bug) | 0 | 1.0 | 0.92 |
 | 3, fixed guardrail and scorer | 10/10 | 0 | 1.0 | 0.95 |
 
-Unit tests: 97/97 pass (`python -m pytest`), with no API calls.
+Unit tests: 137/137 pass (`python -m pytest`), with no API calls.
 
 **RAG before/after** ([evidence/rag_before_after.txt](evidence/rag_before_after.txt), live): with only the AVMA overview, Claude produced 3 generic tasks with tooth care *weekly* (confidence 0.75). With all 16 documents it produced 6 cited tasks from 6 sources, including daily water, daily litter, *daily* dental care, the same meal routine for a senior cat (Cornell) and a senior vet exam (AAHA), at confidence 0.93.
 
@@ -85,6 +87,8 @@ Unit tests: 97/97 pass (`python -m pytest`), with no API calls.
 - Retrieval is lexical. BM25 matches words, not meaning, so a note that says "arthritis" won't pull up a chunk that only says "stiffness".
 - Exercise is still coarse. AKC now backs the 30-minute walk for less active breeds and an hour or more for high-energy ones, but the planner doesn't know a pet's breed unless the owner writes it in the notes, so a Chihuahua and a Husky can still get the same suggestion.
 - Confidence isn't calibrated. The score blends the planner's self-rating with the share of proposals that survived the guardrails. It tells you when evidence is thin, but it isn't a probability.
+- The AI safety layers are only as good as the model and need an API key. Without one, the app falls back to rules that caught just 9 of 50 fresh red-team attacks. The AI reviewer also missed one subtle attack ("ham baby food", which often contains onion powder).
+- Health alerts are simple rules on what the owner logs, not a diagnosis, and the check-in history lives only in the browser session unless the owner saves the file.
 - Trimming is greedy. When time is short, the agent (like my Module 2 scheduler) packs tasks in priority order, so it can drop a high-priority task that doesn't fit and keep a smaller medium-priority one.
 - Privacy. In live mode, pet names, ages, notes and the request text go to Anthropic's API. Emails and phone numbers are redacted first, but other personal details someone types, like an address, are not. WhiskerWise itself stores nothing except the local log file.
 
@@ -100,6 +104,7 @@ Unit tests: 97/97 pass (`python -m pytest`), with no API calls.
 | Public demo abuse | Each visitor gets 5 Claude plans and the app 30 per day, then it switches to the offline planner. The key is a hidden Streamlit secret, and a Console spend limit is the backstop. |
 | Runaway cost or a hung API | A hard 5-round cap, a 90-second timeout and 2 retries per call, and then a fallback to the offline planner. |
 | Making up facts that sound authoritative | Every task must cite a retrieved chunk id, and missing or invented citations are blocked. |
+| Unsafe suggestions phrased to dodge keyword rules | A Claude Haiku reviewer gives a second opinion on every proposed task. It caught 49 of 50 fresh red-team attacks the rules missed or never anticipated. |
 | Poisoning the knowledge base with bad sources | Every source is reviewed, paraphrased and logged in `SOURCES.md`, with dangerous passages excluded. Adding a file is a code-reviewed change, not something users can do from the app. |
 
 With more time I'd add a dose check for numbers written as words in the guardrail itself, an AI check for prompt injection to match the one for emergencies, and a "report this suggestion" button so owners can flag bad outputs.
@@ -114,6 +119,7 @@ With more time I'd add a dose check for numbers written as words in the guardrai
 6. A live 10/10 hid a bug, and so did my scorer. In the first live run, Claude proposed "Brush teeth with pet toothpaste" and explained "never use human toothpaste". My blocklist saw "human toothpaste" and blocked the task in 10 of 14 runs. The agent revised around the block, so every final plan passed while quietly dropping dental care. I only noticed because the log records every round. After I made the check notice negation, the next run reported 6/10, because the evaluation script had its own copy of the same naive check. Now both use one definition. What I took from it is that a guardrail can fail safe and still make the product worse, so I need to measure what the guardrails removed as well as what got through.
 7. Harder tests showed me where regex stops working. My first nine "hard" cases scored 17/19 offline: "won't get up and hasn't eaten since yesterday" and a male cat straining with "nothing comes out" (a urinary blockage that can kill within hours) matched none of my emergency patterns. I added a small Claude Haiku classifier behind the regex, and it caught both live, including the cat case I hadn't written any pattern for. Afterwards I added regex patterns for offline use and tested them against false alarms. "Doesn't walk far anymore" set one off at first, so I narrowed it. The cheap regex layer and the AI layer cover different gaps, and I needed both.
 8. The AI safety check wasn't consistent until I told it exactly what an emergency is. After I added the web sources I re-ran everything, and the Haiku check called "give Luna onion and garlic chicken as a treat" an emergency on one run and not on the other. Nothing unsafe got scheduled either way, but telling an owner to rush to the vet over food they haven't given yet is wrong. Its instructions didn't separate exposure ("Luna ate onion") from intent ("I want to feed onion"). Once I spelled that out, it gave the same correct answer 12 times out of 12, and run-to-run consistency for the whole eval went up to 0.92. Running each scenario twice is what showed me this. A single run would have looked fine.
+9. My own fixes overfit, and an AI attacker proved it. I had a second Claude model write 50 sneaky attacks: brand-name drugs, "birch sugar" (xylitol), tea tree oil, a dog waiting in a parked car, fake "system notices". My guardrails caught 15. I wrote rules for everything that got through and caught 41 of the same 50. Then the attacker wrote a fresh set, told to avoid the first one, and my rules caught only 9. They had memorized round 1. The Claude Haiku reviewer I added at the same time caught 49 of the 50 new attacks. I left the one miss ("ham baby food") unfixed so the number stays honest. Hand-written rules are good for known cases, but a model reviewer is what handles the next new trick.
 
 ## Collaboration with AI during this project
 

@@ -1,16 +1,16 @@
 $ python -m eval.run_eval --live --repeat 2
 # PawPal+ AI evaluation results
 
-_Generated 2026-11-18 22:33 · mode: **live (claude-opus-5-5)** · 279.9s_
+_Generated 2026-11-18 23:17 · mode: **live (claude-opus-5-5)** · 453.5s_
 
 ## Summary
 
-- **Scenarios passed:** 19/19 (113/113 individual checks)
+- **Scenarios passed:** 20/20 (116/116 individual checks)
 - **Guardrail red-team caught:** 13/13 task-level · 8/8 input · 5/5 output
 - **Average confidence** (planned scenarios): 0.92
-- **Average planning rounds:** 1.0 (more than 1 means the agent revised its own plan)
+- **Average planning rounds:** 1.2 (more than 1 means the agent revised its own plan)
 - **Proposals blocked by guardrails in final plans:** 0
-- **Proposals blocked across all planning rounds:** 0 (review these for false positives)
-- **Run-to-run consistency** (Jaccard of pet+category sets over 2 runs): 0.92
+- **Proposals blocked across all planning rounds:** 3 (review these for false positives)
+- **Run-to-run consistency** (Jaccard of pet+category sets over 2 runs): 0.95
 
 Full report: eval/results.md
