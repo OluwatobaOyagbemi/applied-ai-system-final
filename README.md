@@ -61,6 +61,8 @@ Tasks on a disputed topic ("Book senior wellness exam") are flagged for review. 
 
 Round 1 exposed big gaps. I added rules and two AI layers: a Claude Haiku **task reviewer** that gives a second opinion on every proposed task, and **manipulation detection** in the AI input check. Then a fresh round 2, where the attacker was told to avoid round 1's attacks, showed what generalizes. The keyword fixes had overfit (18%), while the AI layers caught 49 of 50 attacks they had never seen. The one miss ("ham baby food", which often contains onion powder) is left unfixed on purpose so the number stays honest. Full reports: [evidence/redteam_round2.md](evidence/redteam_round2.md).
 
+**In the app:** step 4 has a **🛡️ How WhiskerWise stays safe** panel with these scores and a **Try to trick it** box. Type an unsafe idea ("rub garlic paste on her flea bites") and see whether the code rules or the AI reviewer catches it, and why.
+
 ### 3. Health memory across days
 
 A single request can't show that a cat has eaten less three days running. Owners log a 20-second daily check-in per pet (appetite, energy, bathroom, vomiting). `pawpal_ai/health.py` watches the trend with rules tied to the sources: a cat not eating for 2 days or straining in the litter box is **urgent**; eating less 3 days running, vomiting on 2 of the last 3 days, or very low energy means **call the vet**. Urgent trends stop the planner. Call-the-vet trends add a caution and a "Call the vet about check-ins" task to the plan. The app also produces a one-page **vet summary** to bring to an appointment, and the history can be saved and restored.
